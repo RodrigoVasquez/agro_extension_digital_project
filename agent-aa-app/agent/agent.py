@@ -23,7 +23,7 @@ root_agent = Agent(
    # A unique name for the agent.
    name="adecuacion_agroindustrial_agent",
    # The Large Language Model (LLM) that agent will use.
-   model="gemini-2.0-flash-live-preview-04-09", # Vertex AI Studio
+   model="gemini-2.0-flash-001", # Vertex AI Studio
    # A short description of the agent's purpose.
    description="Tu función principal es responder a las preguntas del usuario utilizando formato Markdown.",
    # Instructions to set the agent's behavior.
