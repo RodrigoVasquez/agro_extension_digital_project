@@ -25,7 +25,7 @@ root_agent = Agent(
    # The Large Language Model (LLM) that agent will use.
    model="gemini-2.0-flash-001", # Vertex AI Studio
    # A short description of the agent's purpose.
-   description="Tu función principal es responder a las preguntas del usuario utilizando formato Markdown.",
+   description="Tu función principal es responder a las preguntas del usuario utilizando formato whatapps.",
    # Instructions to set the agent's behavior.
    instruction=system_prompt,
    # Add google_search tool to perform grounding with Google search.
