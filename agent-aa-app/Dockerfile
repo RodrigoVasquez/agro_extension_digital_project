@@ -3,9 +3,9 @@ WORKDIR /app
 
 COPY pyproject.toml .
 
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir uv && \
-    uv pip install
+RUN pip install --no-cache-dir uv &&
+
+RUN uv sync
 
 RUN adduser --disabled-password --gecos "" myuser && \
     chown -R myuser:myuser /app
