@@ -1,19 +1,24 @@
 FROM python:3.12-slim
 WORKDIR /app
 
+# create a non-root user variable
+ARG USERNAME=agent-app-user
+
+
 COPY pyproject.toml .
 
-RUN pip install --no-cache-dir uv &&
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir uv
 
 RUN uv sync
 
-RUN adduser --disabled-password --gecos "" myuser && \
-    chown -R myuser:myuser /app
+RUN adduser --disabled-password --gecos "" ${USERNAME} && \
+    chown -R ${USERNAME}:${USERNAME} /app
 
 COPY . .
 
-USER agent-app-user
+USER ${USERNAME}
 
-ENV PATH="/home/agent-app-user/.local/bin:$PATH"
+ENV PATH="/home/${USERNAME}/.local/bin:$PATH"
 
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port 8080"]
