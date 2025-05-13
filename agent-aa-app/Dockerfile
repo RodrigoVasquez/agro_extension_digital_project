@@ -21,6 +21,4 @@ USER ${USERNAME}
 
 ENV PATH="/home/${USERNAME}/.local/bin:$PATH"
 
-RUN source .venv/bin/activate
-
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port 8080"]
+CMD ["uv", "run", "uvicorn main:app --host 0.0.0.0 --port 8080"]
