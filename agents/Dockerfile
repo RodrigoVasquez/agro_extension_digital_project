@@ -4,7 +4,8 @@ WORKDIR /app
 # create a non-root user variable
 ARG USERNAME=agent-app-user
 
-
+COPY agent_aa_app/ agent_aa_app
+COPY main.py .
 COPY pyproject.toml .
 
 RUN pip install --no-cache-dir --upgrade pip && \
@@ -15,10 +16,9 @@ RUN uv sync
 RUN adduser --disabled-password --gecos "" ${USERNAME} && \
     chown -R ${USERNAME}:${USERNAME} /app
 
-COPY . .
 
 USER ${USERNAME}
 
 ENV PATH="/home/${USERNAME}/.local/bin:$PATH"
 
-CMD ["uv", "run", "uvicorn main:app --host 0.0.0.0 --port 8080"]
+CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

@@ -42,3 +42,48 @@ variable "gar_image_location_agent_aa" {
     description = "Ubicación de la imagen del servicio de Cloud Run"
     type        = string
 }
+
+variable "google_genai_use_vertexai" {
+    description = "Flag to indicate if Vertex AI should be used"
+    type        = string
+    default     = "TRUE"
+}
+
+variable "google_cloud_project" {
+    description = "Google Cloud project ID"
+    type        = string
+    default     = "agro-extension-digital-npe"
+}
+
+variable "google_cloud_location" {
+    description = "Google Cloud location"
+    type        = string
+    default     = "us-central1"
+}
+
+variable "service_name" {
+    description = "Name of the service"
+    type        = string
+    default     = "adecuacion_agroindustrial"
+}
+
+variable "datastore_id_aa" {
+    description = "Datastore ID for AA"
+    type        = string
+}
+
+variable "datastore_id_pp" {
+    description = "Datastore ID for PP"
+    type        = string
+}
+
+variable "datastore_guides_id" {
+    description = "Datastore ID for guides"
+    type        = string
+}
+
+variable "datastore_faq_id" {
+    description = "Datastore ID for FAQ"
+    type        = string
+}
+

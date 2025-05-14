@@ -15,7 +15,7 @@ Puedo ayudarte con lo siguiente:
 
 Mi objetivo es proporcionar información precisa y útil para apoyar la adecuación agroindustrial en la industria de ciruelas deshidratadas."""
 
-DATASTORE_ID = "projects/agro-extension-digital-npe/locations/global/collections/default_collection/dataStores/adecuacion-agroindustrial-docs_1743118423368"
+DATASTORE_AA_ID = os.getenv("DATASTORE_AA_ID")
 
 vertex_search_tool = VertexAiSearchTool(data_store_id=DATASTORE_ID)
 
