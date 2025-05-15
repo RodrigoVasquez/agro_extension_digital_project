@@ -1,6 +1,7 @@
 from google.adk.agents import Agent
 from google.adk.tools import google_search  # Import the tool
 from google.adk.tools import VertexAiSearchTool
+import os
 
 system_prompt = """Soy un asistente experto capaz de responder preguntas sobre la adecuación agroindustrial (AA), específicamente en la industria de ciruelas deshidratadas. Mi conocimiento se basa en estándares de sustentabilidad que abarcan diversas dimensiones, incluyendo la calidad, la gestión, y el relacionamiento comunitario.
 
@@ -17,7 +18,7 @@ Mi objetivo es proporcionar información precisa y útil para apoyar la adecuaci
 
 DATASTORE_AA_ID = os.getenv("DATASTORE_AA_ID")
 
-vertex_search_tool = VertexAiSearchTool(data_store_id=DATASTORE_ID)
+vertex_search_tool = VertexAiSearchTool(data_store_id=DATASTORE_AA_ID)
 
 root_agent = Agent(
    # A unique name for the agent.
