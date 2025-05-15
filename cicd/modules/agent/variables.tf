@@ -67,12 +67,12 @@ variable "service_name" {
     default     = "adecuacion_agroindustrial"
 }
 
-variable "datastore_id_aa" {
+variable "datastore_aa_id" {
     description = "Datastore ID for AA"
     type        = string
 }
 
-variable "datastore_id_pp" {
+variable "datastore_pp_id" {
     description = "Datastore ID for PP"
     type        = string
 }
