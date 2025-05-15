@@ -10,6 +10,12 @@ resource "google_project_iam_member" "agent_aa_sa_role" {
     member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
 }
 
+resource "google_project_iam_member" "agent_aa_sa_role_discovery" {   
+    project = var.project_id
+    role    = "roles/discoveryengine.user"
+    member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
+}
+
 resource "google_cloud_run_v2_service" "cloud_run_name_agent_aa" {
   name     = var.cloud_run_name_agent_aa
   location = var.region
