@@ -35,7 +35,7 @@ jobs:
                        $( [[ "$GITHUB_REF" == refs/tags/* ]] && echo "-t $GAR_REPO:${TAG_NAME}" ) .
 
       - name: Push Docker images
-        working-directory: agent-aa-app
+        working-directory: agents
         run: |
           docker push $GAR_REPO:latest
           docker push $GAR_REPO:${GIT_SHA}
