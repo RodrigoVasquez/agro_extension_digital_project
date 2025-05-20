@@ -57,6 +57,10 @@ resource "google_cloud_run_v2_service" "cloud_run_name_agent_aa" {
         name  = "DATASTORE_FAQ_ID"
         value = var.datastore_faq_id
       }
+      env {
+        name  = "DATASTORE_AA_STRUCTURED_ID"
+        value = var.datastore_aa_structured_id
+      }
     }
 
     service_account = google_service_account.agent_aa_app.email

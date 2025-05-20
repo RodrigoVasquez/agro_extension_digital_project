@@ -87,3 +87,7 @@ variable "datastore_faq_id" {
     type        = string
 }
 
+variable "datastore_aa_structured_id" {
+    description = "Datastore ID for AA structured data"
+    type        = string
+}
