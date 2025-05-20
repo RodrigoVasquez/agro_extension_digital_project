@@ -10,57 +10,72 @@ resource "google_project_iam_member" "agent_aa_sa_role" {
     member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
 }
 
-resource "google_cloud_run_service" "cloud_run_name_agent_aa" {
-    name     = var.cloud_run_name_agent_aa
-    location = var.region
-    project  = var.project_id
-    template {
-        spec {
-            service_account_name = google_service_account.agent_aa_app.email
-            containers {
-                image = var.gar_image_location_agent_aa
-                env {
-                    name  = "GOOGLE_GENAI_USE_VERTEXAI"
-                    value = var.google_genai_use_vertexai
-                }
-                env {
-                    name  = "GOOGLE_CLOUD_PROJECT"
-                    value = var.google_cloud_project
-                }
-                env {
-                    name  = "GOOGLE_CLOUD_LOCATION"
-                    value = var.google_cloud_location
-                }
-                env {
-                    name  = "SERVICE_NAME"
-                    value = var.service_name
-                }
-                env {
-                    name  = "DATASTORE_ID_AA"
-                    value = var.datastore_id_aa
-                }
-                env {
-                    name  = "DATASTORE_ID_PP"
-                    value = var.datastore_id_pp
-                }
-                env {
-                    name  = "DATASTORE_GUIDES_ID"
-                    value = var.datastore_guides_id
-                }
-                env {
-                    name  = "DATASTORE_FAQ_ID"
-                    value = var.datastore_faq_id
-                }
-                
-            }
-        }
+resource "google_project_iam_member" "agent_aa_sa_role_discovery" {   
+    project = var.project_id
+    role    = "roles/discoveryengine.user"
+    member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
+}
+
+resource "google_cloud_run_v2_service" "cloud_run_name_agent_aa" {
+  name     = var.cloud_run_name_agent_aa
+  location = var.region
+  project  = var.project_id
+
+  template {
+    containers {
+      image = var.gar_image_location_agent_aa
+
+      env {
+        name  = "GOOGLE_GENAI_USE_VERTEXAI"
+        value = var.google_genai_use_vertexai
+      }
+      env {
+        name  = "GOOGLE_CLOUD_PROJECT"
+        value = var.google_cloud_project
+      }
+      env {
+        name  = "GOOGLE_CLOUD_LOCATION"
+        value = var.google_cloud_location
+      }
+      env {
+        name  = "SERVICE_NAME"
+        value = var.service_name
+      }
+      env {
+        name  = "DATASTORE_AA_ID"
+        value = var.datastore_aa_id
+      }
+      env {
+        name  = "DATASTORE_PP_ID"
+        value = var.datastore_pp_id
+      }
+      env {
+        name  = "DATASTORE_GUIDES_ID"
+        value = var.datastore_guides_id
+      }
+      env {
+        name  = "DATASTORE_FAQ_ID"
+        value = var.datastore_faq_id
+      }
+      env {
+        name  = "DATASTORE_AA_STRUCTURED_ID"
+        value = var.datastore_aa_structured_id
+      }
     }
-    metadata {
-        annotations = {
-            "run.googleapis.com/ingress" = "all"
-        }
+
+    service_account = google_service_account.agent_aa_app.email
   }
-    
+
+  ingress = "INGRESS_TRAFFIC_ALL"
+
+}
+
+resource "google_cloud_run_v2_service_iam_binding" "noauth" {
+    name        = google_cloud_run_v2_service.cloud_run_name_agent_aa.name
+    project     = var.project_id
+    location    = var.region
+    role        = "roles/run.invoker"
+    members     = ["allUsers"]
 }
 
 terraform {

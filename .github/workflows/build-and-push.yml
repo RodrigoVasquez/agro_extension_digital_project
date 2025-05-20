@@ -28,14 +28,14 @@ jobs:
           echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
       - name: Build Docker image
-        working-directory: agent-aa-app
+        working-directory: agents
         run: |
           docker build -t $GAR_REPO:latest \
                        -t $GAR_REPO:${GIT_SHA} \
                        $( [[ "$GITHUB_REF" == refs/tags/* ]] && echo "-t $GAR_REPO:${TAG_NAME}" ) .
 
       - name: Push Docker images
-        working-directory: agent-aa-app
+        working-directory: agents
         run: |
           docker push $GAR_REPO:latest
           docker push $GAR_REPO:${GIT_SHA}

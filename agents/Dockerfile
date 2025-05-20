@@ -4,6 +4,7 @@ WORKDIR /app
 # create a non-root user variable
 ARG USERNAME=agent-app-user
 
+COPY agent_pp_app/ agent_pp_app
 COPY agent_aa_app/ agent_aa_app
 COPY main.py .
 COPY pyproject.toml .
