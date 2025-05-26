@@ -87,7 +87,12 @@ variable "datastore_faq_id" {
     type        = string
 }
 
-variable "datastore_aa_structured_id" {
-    description = "Datastore ID for AA structured data"
+variable "datastore_chileprunes_cl_id" {
+    description = "Datastore ID for Chileprunes CL"
+    type        = string
+}
+
+variable "bigquery_integration_application_connector_id" {
+    description = "BigQuery integration application connector ID"
     type        = string
 }

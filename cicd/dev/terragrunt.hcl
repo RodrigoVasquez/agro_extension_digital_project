@@ -19,11 +19,12 @@ inputs = {
   google_cloud_project = "agro-extension-digital-npe"
   google_cloud_location = "us-central1"
   service_name = "agent-dev"
-  datastore_aa_structured_id = "projects/agro-extension-digital-npe/locations/global/collections/default_collection/dataStores/estandar-aa-structured_1747343014042"
   datastore_aa_id = "projects/agro-extension-digital-npe/locations/global/collections/default_collection/dataStores/0001-adecuacion-agroindustrial_1745450263959"
   datastore_pp_id = "projects/agro-extension-digital-npe/locations/global/collections/default_collection/dataStores/0001-produccion-primaria_1745450565038"
   datastore_guides_id = "projects/agro-extension-digital-npe/locations/global/collections/default_collection/dataStores/0001-guias_1745450505033"
   datastore_faq_id = "projects/agro-extension-digital-npe/locations/global/collections/default_collection/dataStores/0001-faq_1745450327301"
+  datastore_chileprunes_cl_id = "projects/agro-extension-digital-npe/locations/global/collections/default_collection/dataStores/0001-chileprunes-cl_1748096068703"
+  bigquery_integration_application_connector_id = "c0001-bq-connector"
 }
 
 terraform {
