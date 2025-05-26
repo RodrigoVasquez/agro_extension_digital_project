@@ -3,9 +3,8 @@ from google.adk.tools import agent_tool
 from google.adk.tools import VertexAiSearchTool
 
 import os
-from agent_aa_app.system_prompts import ESTANDAR_AA_SYSTEM_PROMPT
-from agent_aa_app.system_prompts import ESTANDAR_AA_STRUCTURED_SYSTEM_PROMPT
 from agent_aa_app.tools import estandar_aa_tool
+from agent_aa_app.prompts import AA_AGENT_RAG_INSTRUCTION, AA_AGENT_RAG_DESCRIPTION, AA_AGENT_BQ_INSTRUCTION, AA_AGENT_BQ_DESCRIPTION, AA_AGENT_INSTRUCTION
 
 vertex_search_tool_aa = VertexAiSearchTool(data_store_id=os.getenv("DATASTORE_AA_ID"))
 vertex_search_tool_guides = VertexAiSearchTool(data_store_id=os.getenv("DATASTORE_GUIDES_ID"))
@@ -15,8 +14,8 @@ vertex_search_tool_chileprunes_cl= VertexAiSearchTool(data_store_id=os.getenv("D
 aa_agent_rag = LlmAgent(
    name="aa_agent_rag",
    model="gemini-2.0-flash-001",
-   description="Tu función principal es responder a las preguntas del usuario utilizando formato whatapps. Y formatea los links que retornes como hipervinculos cuando tengas que retornar un link",
-   instruction=ESTANDAR_AA_STRUCTURED_SYSTEM_PROMPT,
+   instruction=AA_AGENT_RAG_INSTRUCTION,
+   description=AA_AGENT_RAG_DESCRIPTION,
    tools=[vertex_search_tool_aa,
           vertex_search_tool_guides,
           vertex_search_tool_faq,
@@ -24,18 +23,17 @@ aa_agent_rag = LlmAgent(
 )
 
 aa_agent_bq = LlmAgent(
-   name="aa_agent_bq",
-   model="gemini-2.0-flash-001",
-   description="Útil para consultar rápidamente y de forma interactiva cualquier detalle dentro de un catálogo estructurado de estándares y buenas prácticas, permitiendo a los usuarios obtener respuestas precisas sobre criterios específicos identificados por sus códigos o características categóricas como nivel de importancia, dimensión o tema. Facilita la comprensión de las acciones concretas a implementar, los métodos de verificación necesarios, la puntuación asociada a cada elemento o los recursos de apoyo disponibles, convirtiéndose en una ayuda esencial para quienes necesitan navegar, interpretar o aplicar dicho marco normativo o de certificación de manera eficiente.",
-   instruction="Útil para consultar rápidamente y de forma interactiva cualquier detalle dentro de un catálogo estructurado de estándares y buenas prácticas, permitiendo a los usuarios obtener respuestas precisas sobre criterios específicos identificados por sus códigos o características categóricas como nivel de importancia, dimensión o tema. Facilita la comprensión de las acciones concretas a implementar, los métodos de verificación necesarios, la puntuación asociada a cada elemento o los recursos de apoyo disponibles, convirtiéndose en una ayuda esencial para quienes necesitan navegar, interpretar o aplicar dicho marco normativo o de certificación de manera eficiente.",
-   tools=estandar_aa_tool.get_tools(),
+    name="aa_agent_bq",
+    model="gemini-2.0-flash-001",
+    instruction=AA_AGENT_BQ_INSTRUCTION,
+    description=AA_AGENT_BQ_DESCRIPTION,
+    tools=estandar_aa_tool.get_tools(),
 )
 
 root_agent = LlmAgent(
     name="aa_agent",
     model="gemini-2.0-flash-001",
-    description="Tu funcion es coordinar los agentes y retornar la respuesta al usuario en formato whatapps si es que puedes",
-    instruction="Tu funcion es coordinar los agentes y retornar la respuesta al usuario en formato whatapps si es que puedes",
+    instruction=AA_AGENT_INSTRUCTION,
     tools=[
         agent_tool.AgentTool(agent=aa_agent_rag),
         agent_tool.AgentTool(agent=aa_agent_bq)
