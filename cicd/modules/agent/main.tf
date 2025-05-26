@@ -16,6 +16,18 @@ resource "google_project_iam_member" "agent_aa_sa_role_discovery" {
     member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
 }
 
+resource "google_project_iam_member" "agent_aa_connection_user" {   
+    project = var.project_id
+    role    = "roles/connectors.user"
+    member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
+}
+
+resource "google_project_iam_member" "agent_aa_integration_invoker" {   
+    project = var.project_id
+    role    = "roles/integrations.integrationInvoker"
+    member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
+}
+
 resource "google_cloud_run_v2_service" "cloud_run_name_agent_aa" {
   name     = var.cloud_run_name_agent_aa
   location = var.region
@@ -58,9 +70,13 @@ resource "google_cloud_run_v2_service" "cloud_run_name_agent_aa" {
         value = var.datastore_faq_id
       }
       env {
-        name  = "DATASTORE_AA_STRUCTURED_ID"
-        value = var.datastore_aa_structured_id
-      }
+        name  = "DATASTORE_CHILEPRUNES_CL_ID"
+        value = var.datastore_chileprunes_cl_id
+        }
+      env {
+        name  = "BIGQUERY_INTEGRATION_APPLICATION_CONNECTOR_ID"
+        value = var.bigquery_integration_application_connector_id
+        }
     }
 
     service_account = google_service_account.agent_aa_app.email
