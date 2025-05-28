@@ -27,7 +27,7 @@ pp_agent_bq = LlmAgent(
     model="gemini-2.0-flash-001",
     instruction=PP_AGENT_BQ_INSTRUCTION,
     description=PP_AGENT_BQ_DESCRIPTION,
-    tools=estandar_pp_tool.get_tools(),
+    tools=[estandar_pp_tool],
 )
 
 root_agent = LlmAgent(
