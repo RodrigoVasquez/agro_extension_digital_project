@@ -22,15 +22,12 @@ aa_agent_rag = LlmAgent(
           vertex_search_tool_chileprunes_cl],
 )
 
-
-tools = estandar_aa_tool.get_tools()
-
 aa_agent_bq = LlmAgent(
     name="aa_agent_bq",
     model="gemini-2.0-flash-001",
     instruction=AA_AGENT_BQ_INSTRUCTION,
     description=AA_AGENT_BQ_DESCRIPTION,
-    tools= tools,
+    tools= [estandar_aa_tool],
 )
 
 root_agent = LlmAgent(
