@@ -2,7 +2,7 @@ from google.adk.agents import LlmAgent
 from google.adk.tools import agent_tool
 from google.adk.tools import VertexAiSearchTool
 
-import os
+import os, time
 from agent_aa_app.tools import estandar_aa_tool
 from agent_aa_app.prompts import AA_AGENT_RAG_INSTRUCTION, AA_AGENT_RAG_DESCRIPTION, AA_AGENT_BQ_INSTRUCTION, AA_AGENT_BQ_DESCRIPTION, AA_AGENT_INSTRUCTION
 
@@ -27,7 +27,7 @@ aa_agent_bq = LlmAgent(
     model="gemini-2.0-flash-001",
     instruction=AA_AGENT_BQ_INSTRUCTION,
     description=AA_AGENT_BQ_DESCRIPTION,
-    tools=estandar_aa_tool.get_tools(),
+    tools= [estandar_aa_tool],
 )
 
 root_agent = LlmAgent(
