@@ -16,9 +16,15 @@ resource "google_project_iam_member" "agent_aa_sa_role_discovery" {
     member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
 }
 
-resource "google_project_iam_member" "agent_aa_connection_user" {   
+resource "google_project_iam_member" "agent_aa_connection_invoker" {   
     project = var.project_id
-    role    = "roles/connectors.user"
+    role    = "roles/connectors.invoker"
+    member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
+}
+
+resource "google_project_iam_member" "agent_aa_connection_viewer" {   
+    project = var.project_id
+    role    = "roles/connectors.viewer"
     member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
 }
 

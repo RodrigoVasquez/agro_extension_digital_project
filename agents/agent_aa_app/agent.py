@@ -2,7 +2,7 @@ from google.adk.agents import LlmAgent
 from google.adk.tools import agent_tool
 from google.adk.tools import VertexAiSearchTool
 
-import os
+import os, time
 from agent_aa_app.tools import estandar_aa_tool
 from agent_aa_app.prompts import AA_AGENT_RAG_INSTRUCTION, AA_AGENT_RAG_DESCRIPTION, AA_AGENT_BQ_INSTRUCTION, AA_AGENT_BQ_DESCRIPTION, AA_AGENT_INSTRUCTION
 
@@ -22,12 +22,17 @@ aa_agent_rag = LlmAgent(
           vertex_search_tool_chileprunes_cl],
 )
 
+
+tools = estandar_aa_tool.get_tools()
+
+time.sleep(5)  # Wait for the tools to be ready
+
 aa_agent_bq = LlmAgent(
     name="aa_agent_bq",
     model="gemini-2.0-flash-001",
     instruction=AA_AGENT_BQ_INSTRUCTION,
     description=AA_AGENT_BQ_DESCRIPTION,
-    tools=estandar_aa_tool.get_tools(),
+    tools= tools,
 )
 
 root_agent = LlmAgent(
