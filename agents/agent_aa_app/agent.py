@@ -25,8 +25,6 @@ aa_agent_rag = LlmAgent(
 
 tools = estandar_aa_tool.get_tools()
 
-time.sleep(5)  # Wait for the tools to be ready
-
 aa_agent_bq = LlmAgent(
     name="aa_agent_bq",
     model="gemini-2.0-flash-001",
