@@ -6,7 +6,7 @@ resource "google_service_account" "agent_aa_app" {
 
 resource "google_service_account" "webhook_app_sa" {
     account_id   = var.service_account_webhook_app
-    display_name = var.service_account_webhook_app_display_name
+    display_name = var.service_account_display_name_webhook_app
     project = var.project_id
 }
 

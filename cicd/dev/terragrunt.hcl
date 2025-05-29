@@ -32,6 +32,7 @@ inputs = {
   estandar_pp_facebook_app = "https://graph.facebook.com/v22.0/586486637888050/messages"
   verify_token = "your_verify_token"
   gar_image_location_webhook = "us-central1-docker.pkg.dev/agro-extension-digital-npe/agents/agent-webhook-app:latest"
+  cloud_run_name_webhook = "agent-webhook-dev"
 }
 
 terraform {

@@ -132,7 +132,7 @@ variable "service_account_webhook_app" {
     type        = string
 }
 
-variable "service_account_webhook_app_display_name" {
+variable "service_account_display_name_webhook_app" {
     description = "Nombre para mostrar de la cuenta de servicio del webhook"
     type        = string
 }
