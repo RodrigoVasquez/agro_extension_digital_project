@@ -34,7 +34,7 @@ async def receive_message(request: Request):
         processed_messages.append(body)
         url = os.getenv("ESTANDAR_AA_FACEBOOK_APP")
         headers = {
-            "Authorization": f"Bearer {idtoken_from_metadata_server(os.getenv('APP_URL'))}",
+            #"Authorization": f"Bearer {idtoken_from_metadata_server(os.getenv('APP_URL'))}",
             "Content-Type": "application/json"
         }
         payload = {

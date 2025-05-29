@@ -136,3 +136,13 @@ variable "service_account_display_name_webhook_app" {
     description = "Nombre para mostrar de la cuenta de servicio del webhook"
     type        = string
 }
+
+variable "estandar_aa_app_name" {
+    description = "URL del servicio de Facebook para AA"
+    type        = string
+}
+
+variable "estandar_pp_app_name" {
+    description = "URL del servicio de Facebook para AA"
+    type        = string
+}

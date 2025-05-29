@@ -4,9 +4,9 @@ import json
 
 APP_URL=os.getenv("APP_URL")  # Default to localhost if not set
 
-def create_session(user: str, session_id: str):
+def create_session(user: str, app_name: str,session_id: str):
     token = "your_token_here"
-    session_url = f"{APP_URL}/apps/agent/users/{user}/sessions/{session_id}"
+    session_url = f"{APP_URL}/apps/{app_name}/users/{user}/sessions/{session_id}"
 
     # Encabezados
     headers = {

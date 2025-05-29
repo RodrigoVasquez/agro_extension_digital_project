@@ -4,7 +4,7 @@ import json
 
 APP_URL=os.getenv("APP_URL")  # Default to localhost if not set
 
-def send_message(user: str, session_id: str, message: str):
+def send_message(user: str, app_name: str,session_id: str, message: str):
     token = "your_token_here"
     session_url = f"{APP_URL}/run_sse"
 
@@ -16,7 +16,7 @@ def send_message(user: str, session_id: str, message: str):
 
     # Cuerpo de la solicitud
     payload = {
-        "app_name": "agent",
+        "app_name": app_name,
         "user_id": user,
         "session_id": session_id,
         "new_message": {

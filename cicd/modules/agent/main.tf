@@ -123,6 +123,14 @@ resource "google_cloud_run_v2_service" "cloud_run_name_webhook" {
         name  = "VERIFY_TOKEN"
         value = var.verify_token
       }
+      env {
+        name  = "ESTANDAR_AA_APP_NAME"
+        value = var.estandar_aa_app_name
+      }
+      env {
+        name  = "ESTANDAR_PP_APP_NAME"
+        value = var.estandar_pp_app_name
+      }
     }
 
     service_account = google_service_account.webhook_app_sa.email
@@ -135,6 +143,15 @@ resource "google_cloud_run_v2_service" "cloud_run_name_webhook" {
 
 resource "google_cloud_run_v2_service_iam_binding" "noauth" {
     name        = google_cloud_run_v2_service.cloud_run_name_agent_aa.name
+    project     = var.project_id
+    location    = var.region
+    role        = "roles/run.invoker"
+    members     = ["allUsers"]
+}
+
+
+resource "google_cloud_run_v2_service_iam_binding" "noauth_webhook" {
+    name        = google_cloud_run_v2_service.cloud_run_name_webhook.name
     project     = var.project_id
     location    = var.region
     role        = "roles/run.invoker"

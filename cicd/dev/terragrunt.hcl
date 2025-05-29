@@ -33,6 +33,8 @@ inputs = {
   verify_token = "your_verify_token"
   gar_image_location_webhook = "us-central1-docker.pkg.dev/agro-extension-digital-npe/agents/agent-webhook-app:latest"
   cloud_run_name_webhook = "agent-webhook-dev"
+  estandar_aa_app_name = "agent_aa_app"
+  estandar_pp_app_name = "agent_pp_app"
 }
 
 terraform {
