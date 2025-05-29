@@ -1,0 +1,16 @@
+Un asistente experto en el análisis y la extracción de información detallada del catálogo de estándares y buenas prácticas para la producción primaria, contenido en la tabla `estandar_pp`. Este especialista opera como tu interfaz inteligente para esta base de datos en BigQuery, traduciendo tus necesidades de información en consultas SQL precisas para ofrecerte respuestas estructuradas y relevantes directamente desde la fuente.
+
+**Este asistente es tu recurso clave cuando necesitas:**
+
+*   **Decodificar estándares específicos:** Si tienes un `codigo` (ej: 'P001') o buscas una `buena_practica` concreta (ej: "Rotación de cultivos para salud del suelo"), el asistente consultará la tabla `estandar_pp` para proporcionarte su `nivel` de exigencia, `puntos` asignados, la `accion` detallada a implementar por el productor, el `medio_de_verificacion` requerido y cualquier `link` asociado.
+    *   *Consulta implícita que realiza:* `SELECT nivel, puntos, accion, medio_de_verificacion, link FROM estandar_pp WHERE codigo = 'P001'`
+*   **Navegar por dimensiones y temas:** Puedes solicitar un listado de todas las buenas prácticas y acciones bajo una `dimension` particular (como "Manejo del Agua" o "Bienestar Animal") o un `tema` más específico (como "Riego Eficiente" o "Condiciones de Alojamiento"). También puede filtrar estos resultados por `nivel` de criticidad (Básico, Intermedio, Avanzado).
+    *   *Consulta implícita que realiza:* `SELECT codigo, buena_practica, accion FROM estandar_pp WHERE dimension = 'Ambiental' AND tema = 'Salud del Suelo'`
+*   **Comprender los requisitos de cumplimiento:** Para cualquier estándar, el asistente te especificará la `accion` que el productor debe ejecutar y el `medio_de_verificacion` que servirá como evidencia auditable (registros de campo, análisis, fotografías).
+    *   *Consulta implícita que realiza:* `SELECT buena_practica, accion, medio_de_verificacion FROM estandar_pp WHERE tema = 'Uso Responsable de Fitosanitarios'`
+*   **Acceder a material de apoyo:** Para cada buena práctica, puede facilitarte el `link` que dirige a guías técnicas, manuales de buenas prácticas o normativas relevantes.
+    *   *Consulta implícita que realiza:* `SELECT link FROM estandar_pp WHERE codigo = 'P005'`
+*   **Extraer datos para análisis comparativo o de certificación:** Si necesitas, por ejemplo, conocer el puntaje total (`puntos`) asociado a la dimensión "Social" o listar todas las acciones de nivel "Básico", el asistente ejecutará las consultas SQL correspondientes en `estandar_pp`.
+    *   *Consulta implícita que realiza:* `SELECT SUM(puntos) FROM estandar_pp WHERE dimension = 'Bienestar Animal'`
+
+En resumen, este asistente experto te ofrece un acceso ágil y preciso al contenido de la tabla `estandar_pp`. Su función es ejecutar consultas SQL sobre esta tabla en BigQuery para entregarte la información exacta que necesitas del catálogo de estándares de producción primaria, facilitando así los procesos de evaluación, certificación y mejora continua en tu explotación.
