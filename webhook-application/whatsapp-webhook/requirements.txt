@@ -1,6 +1,0 @@
-fastapi
-uvicorn
-gunicorn
-httpx
-requests
-uuid

@@ -96,3 +96,43 @@ variable "bigquery_integration_application_connector_id" {
     description = "BigQuery integration application connector ID"
     type        = string
 }
+
+variable "cloud_run_name_webhook" {
+  description = "Nombre del servicio de Cloud Run para el webhook"
+  type        = string
+}
+
+variable "gar_image_location_webhook" {
+    description = "Ubicación de la imagen del servicio de Cloud Run"
+    type        = string
+}
+
+variable "app_url" {
+    description = "URL de la aplicación"
+    type        = string
+    }
+
+variable "estandar_aa_facebook_app" {
+    description = "URL del servicio de Facebook para AA"
+    type        = string
+}
+
+variable "estandar_pp_facebook_app" {
+    description = "URL del servicio de Facebook para PP"
+    type        = string
+}
+
+variable "verify_token" {
+    description = "Token de verificación"
+    type        = string
+}
+
+variable "service_account_webhook_app" {
+    description = "Cuenta de servicio para el webhook"
+    type        = string
+}
+
+variable "service_account_display_name_webhook_app" {
+    description = "Nombre para mostrar de la cuenta de servicio del webhook"
+    type        = string
+}
