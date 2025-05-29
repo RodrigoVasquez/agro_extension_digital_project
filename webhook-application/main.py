@@ -57,8 +57,8 @@ async def receive_message(request: Request):
                     if value['messages'][0]['type'] == 'text':
                         session_id =uuid.uuid4().hex
                         user = value['contacts'][0]['wa_id']
-                        create_session(user, session_id)
-                        response = send_message(user, session_id, value['messages'][0]['text']['body'])
+                        create_session(user, os.getenv("ESTANDAR_AA_APP_NAME"), session_id)
+                        response = send_message(user, os.getenv("ESTANDAR_AA_APP_NAME"), session_id, value['messages'][0]['text']['body'])
                         print("Received message:", value)
                         print("Sent message:", response)
                         payload['text']['body'] = response
