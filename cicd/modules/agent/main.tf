@@ -131,6 +131,11 @@ resource "google_cloud_run_v2_service" "cloud_run_name_webhook" {
         name  = "ESTANDAR_PP_APP_NAME"
         value = var.estandar_pp_app_name
       }
+
+      env {
+        name  = "WSP_TOKEN"
+        value = var.wsp_token
+      }
     }
 
     service_account = google_service_account.webhook_app_sa.email

@@ -146,3 +146,8 @@ variable "estandar_pp_app_name" {
     description = "URL del servicio de Facebook para AA"
     type        = string
 }
+
+variable "wsp_token" {
+    description = "Token de WhatsApp"
+    type        = string
+}
