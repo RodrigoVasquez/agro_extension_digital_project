@@ -1,6 +1,7 @@
 import requests
 import os
 import json
+import re
 
 APP_URL=os.getenv("APP_URL")  # Default to localhost if not set
 
@@ -27,13 +28,19 @@ def send_message(user: str, app_name: str,session_id: str, message: str):
         },
         "streaming": False,
      }
-
     # Realizar la solicitud POST
     response = requests.post(session_url, headers=headers, json=payload)
 
-    if response.text.startswith('data: '):
-        json_data = response.text[6:]  # Quitar 'data: '
+    json_blocks = re.findall(r'data:\s*(\{.*?\})(?=\n|$)', response.text, re.DOTALL)
 
-# Convertir la cadena JSON a un diccionario de Python
-    parsed_data = json.loads(json_data)
-    return parsed_data['content']['parts'][0]['text']
+# Obtener el texto del último bloque
+    if json_blocks:
+        last_json = json.loads(json_blocks[-1])
+        parts = last_json.get("content", {}).get("parts", [])
+        if parts and "text" in parts[0]:
+            final_text = parts[0]["text"]
+            return final_text.strip()
+        else:
+            return "Error en la respuesta del agente contactar al administrador."
+    else:
+        return "Error en la respuesta del agente contactar al administrador."
