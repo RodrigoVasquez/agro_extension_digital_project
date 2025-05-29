@@ -4,6 +4,12 @@ resource "google_service_account" "agent_aa_app" {
     project = var.project_id
 }
 
+resource "google_service_account" "webhook_app_sa" {
+    account_id   = var.service_account_webhook_app
+    display_name = var.service_account_webhook_app_display_name
+    project = var.project_id
+}
+
 resource "google_project_iam_member" "agent_aa_sa_role" {   
     project = var.project_id
     role    = "roles/aiplatform.user"
@@ -91,6 +97,41 @@ resource "google_cloud_run_v2_service" "cloud_run_name_agent_aa" {
   ingress = "INGRESS_TRAFFIC_ALL"
 
 }
+
+resource "google_cloud_run_v2_service" "cloud_run_name_webhook" {
+  name     = var.cloud_run_name_webhook
+  location = var.region
+  project  = var.project_id
+
+  template {
+    containers {
+      image = var.gar_image_location_webhook
+
+      env {
+        name  = "APP_URL"
+        value = var.app_url
+      }
+      env {
+        name  = "ESTANDAR_AA_FACEBOOK_APP"
+        value = var.estandar_aa_facebook_app
+      }
+      env {
+        name  = "ESTANDAR_PP_FACEBOOK_APP"
+        value = var.estandar_pp_facebook_app
+      }
+      env {
+        name  = "VERIFY_TOKEN"
+        value = var.verify_token
+      }
+    }
+
+    service_account = google_service_account.webhook_app_sa.email
+  }
+
+  ingress = "INGRESS_TRAFFIC_ALL"
+
+}
+
 
 resource "google_cloud_run_v2_service_iam_binding" "noauth" {
     name        = google_cloud_run_v2_service.cloud_run_name_agent_aa.name

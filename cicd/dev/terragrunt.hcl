@@ -25,6 +25,13 @@ inputs = {
   datastore_faq_id = "projects/agro-extension-digital-npe/locations/global/collections/default_collection/dataStores/0001-faq_1745450327301"
   datastore_chileprunes_cl_id = "projects/agro-extension-digital-npe/locations/global/collections/default_collection/dataStores/0001-chileprunes-cl_1748096068703"
   bigquery_integration_application_connector_id = "c0001-bq-connector"
+  service_account_webhook_app = "agent-webhook-sa-dev"
+  service_account_display_name_webhook_app = "Agent Webhook Service Account"
+  app_url = "https://agent-dev-890639421110.us-central1.run.app"
+  estandar_aa_facebook_app = "https://graph.facebook.com/v22.0/586486637888050/messages"
+  estandar_pp_facebook_app = "https://graph.facebook.com/v22.0/586486637888050/messages"
+  verify_token = "your_verify_token"
+  gar_image_location_webhook = "us-central1-docker.pkg.dev/agro-extension-digital-npe/agents/agent-webhook-app:latest"
 }
 
 terraform {
