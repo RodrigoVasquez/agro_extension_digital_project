@@ -2,16 +2,24 @@ import requests
 import os
 import json
 import re
+from whatsapp_webhook.utils import idtoken_from_metadata_server
 
 APP_URL=os.getenv("APP_URL")  # Default to localhost if not set
 
 def send_message(user: str, app_name: str,session_id: str, message: str):
-    token = "your_token_here"
+    try:
+        print("Fetching ID token...")
+        id_token = idtoken_from_metadata_server(APP_URL)
+        print("ID token fetched successfully.")
+    except Exception as e:
+        print(f"Error generating ID token: {e}")
+        return "Error: Could not authenticate to the agent service. Please contact administrator."
+
     session_url = f"{APP_URL}/run_sse"
 
     # Encabezados
     headers = {
-   #     "Authorization": f"Bearer {token}",
+        "Authorization": f"Bearer {id_token}",
         "Content-Type": "application/json"
     }
 
