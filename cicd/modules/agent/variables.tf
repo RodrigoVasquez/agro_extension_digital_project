@@ -107,11 +107,6 @@ variable "gar_image_location_webhook" {
     type        = string
 }
 
-variable "app_url" {
-    description = "URL de la aplicación"
-    type        = string
-    }
-
 variable "estandar_aa_facebook_app" {
     description = "URL del servicio de Facebook para AA"
     type        = string

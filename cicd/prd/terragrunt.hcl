@@ -38,8 +38,6 @@ inputs = {
   service_account_webhook_app = "agent-webhook-sa-prd" # Added -prd
   service_account_display_name_webhook_app = "Agent Webhook Service Account PRD" # Added PRD
 
-  app_url = "https://agent-aa-prd-YOUR_UNIQUE_HASH-uc.a.run.app" # Placeholder URL for PRD
-
   # Secrets - set to placeholder values for PRD
   estandar_aa_facebook_app = "SET_FOR_PRODUCTION_ESTANDAR_AA_FACEBOOK_APP"
   estandar_pp_facebook_app = "SET_FOR_PRODUCTION_ESTANDAR_PP_FACEBOOK_APP"
