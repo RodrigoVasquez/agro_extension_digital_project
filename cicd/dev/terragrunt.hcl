@@ -2,6 +2,11 @@ include "root" {
   path = find_in_parent_folders("root.hcl")
 }
 
+locals {
+  terragrunt_state_bucket = "agro-extension-digital-tf-state-bucket"
+  terragrunt_state_project = "agro-extension-digital-npe"
+}
+
 inputs = {
   project_id = "agro-extension-digital-npe"
   environment = "dev"

@@ -52,7 +52,7 @@ variable "google_genai_use_vertexai" {
 variable "google_cloud_project" {
     description = "Google Cloud project ID"
     type        = string
-    default     = "agro-extension-digital-npe"
+    default     = null
 }
 
 variable "google_cloud_location" {
