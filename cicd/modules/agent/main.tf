@@ -109,7 +109,7 @@ resource "google_cloud_run_v2_service" "cloud_run_name_webhook" {
 
       env {
         name  = "APP_URL"
-        value = var.app_url
+        value = google_cloud_run_v2_service.cloud_run_name_agent_aa.uri # Changed from var.app_url
       }
       env {
         name  = "ESTANDAR_AA_FACEBOOK_APP"
@@ -142,16 +142,7 @@ resource "google_cloud_run_v2_service" "cloud_run_name_webhook" {
   }
 
   ingress = "INGRESS_TRAFFIC_ALL"
-
-}
-
-
-resource "google_cloud_run_v2_service_iam_binding" "noauth" {
-    name        = google_cloud_run_v2_service.cloud_run_name_agent_aa.name
-    project     = var.project_id
-    location    = var.region
-    role        = "roles/run.invoker"
-    members     = ["allUsers"]
+  depends_on = [google_cloud_run_v2_service.cloud_run_name_agent_aa]
 }
 
 
@@ -165,4 +156,9 @@ resource "google_cloud_run_v2_service_iam_binding" "noauth_webhook" {
 
 terraform {
   backend "gcs" {}
+}
+
+output "agent_aa_service_url" {
+  description = "The URL of the agent-aa Cloud Run service."
+  value       = google_cloud_run_v2_service.cloud_run_name_agent_aa.uri
 }

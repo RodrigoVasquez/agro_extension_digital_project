@@ -2,6 +2,11 @@ include "root" {
   path = find_in_parent_folders("root.hcl")
 }
 
+locals {
+  terragrunt_state_bucket = "agro-extension-digital-tf-state-bucket"
+  terragrunt_state_project = "agro-extension-digital-npe"
+}
+
 inputs = {
   project_id = "agro-extension-digital-npe"
   environment = "dev"
@@ -27,7 +32,6 @@ inputs = {
   bigquery_integration_application_connector_id = "c0001-bq-connector"
   service_account_webhook_app = "agent-webhook-sa-dev"
   service_account_display_name_webhook_app = "Agent Webhook Service Account"
-  app_url = "https://agent-dev-890639421110.us-central1.run.app"
   estandar_aa_facebook_app = "https://graph.facebook.com/v22.0/586486637888050/messages"
   estandar_pp_facebook_app = "https://graph.facebook.com/v22.0/586486637888050/messages"
   verify_token = "your_verify_token"

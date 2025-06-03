@@ -2,10 +2,10 @@ remote_state {
   backend = "gcs"
 
   config = {
-    bucket         = "agro-extension-digital-tf-state-bucket" # Nombre del bucket
-    prefix         = "${path_relative_to_include()}/terraform.tfstate" # Ruta del estado
-    project        = "agro-extension-digital-npe"
-    location       = "us-central1"            # Región del bucket
+    bucket  = local.terragrunt_state_bucket # These locals must be defined in child terragrunt.hcl
+    prefix  = "${path_relative_to_include()}/terraform.tfstate"
+    project = local.terragrunt_state_project # These locals must be defined in child terragrंट.hcl
+    location = "us-central1"            # Can also be made a local if it needs to vary
   }
 }
 

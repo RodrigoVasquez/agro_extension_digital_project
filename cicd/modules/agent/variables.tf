@@ -52,7 +52,7 @@ variable "google_genai_use_vertexai" {
 variable "google_cloud_project" {
     description = "Google Cloud project ID"
     type        = string
-    default     = "agro-extension-digital-npe"
+    default     = null
 }
 
 variable "google_cloud_location" {
@@ -106,11 +106,6 @@ variable "gar_image_location_webhook" {
     description = "Ubicación de la imagen del servicio de Cloud Run"
     type        = string
 }
-
-variable "app_url" {
-    description = "URL de la aplicación"
-    type        = string
-    }
 
 variable "estandar_aa_facebook_app" {
     description = "URL del servicio de Facebook para AA"
