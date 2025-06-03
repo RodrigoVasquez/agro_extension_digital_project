@@ -2,9 +2,14 @@ include "root" {
   path = find_in_parent_folders("root.hcl")
 }
 
-locals {
-  terragrunt_state_bucket = "agro-extension-digital-prd-tf-state-bucket"
-  terragrunt_state_project = "agro-extension-digital-prd"
+remote_state {
+  backend = "gcs"
+  config = {
+    bucket  = "agro-extension-digital-prd-tf-state-bucket"
+    project = "agro-extension-digital-prd"
+    prefix  = "${path_relative_to_include()}/terraform.tfstate"
+    location = "us-central1"
+  }
 }
 
 inputs = {
