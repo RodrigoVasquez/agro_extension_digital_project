@@ -154,6 +154,14 @@ resource "google_cloud_run_v2_service_iam_binding" "noauth_webhook" {
     members     = ["allUsers"]
 }
 
+resource "google_cloud_run_v2_service_iam_member" "webhook_invokes_agent_aa" {
+  name     = google_cloud_run_v2_service.cloud_run_name_agent_aa.name
+  project  = var.project_id
+  location = var.region
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${google_service_account.webhook_app_sa.email}"
+}
+
 terraform {
   backend "gcs" {}
 }

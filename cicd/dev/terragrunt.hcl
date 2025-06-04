@@ -44,7 +44,7 @@ inputs = {
   cloud_run_name_webhook = "agent-webhook-dev"
   estandar_aa_app_name = "agent_aa_app"
   estandar_pp_app_name = "agent_pp_app"
-  wsp_token = "EAAeFypiAzZAsBO0CrwiCqcqOWLla95c2aA9O30svyzURZA2Ac7zi4hgZBKEVAgdEzWbZBGtOudBAR9DeoeZBnRL3kKk40mds9k8axSZApVCskNoY4EFhCZBNQwMY9ZBqnPds5vt54sLaAg03b3TJdcvb49CXYe2SRVIKZCjS8fqIOKixg0NHugtZClYmEUslCYFljLVi5lofQHuDnioMFqcZBOkZBE6LlVfrEgWO3gZDZD"
+  wsp_token = run_cmd("gcloud", "secrets", "versions", "access", "latest", "--secret=wsp-token", "--project=agro-extension-digital-npe")
 }
 
 terraform {

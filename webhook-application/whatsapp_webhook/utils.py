@@ -28,5 +28,4 @@ def idtoken_from_metadata_server(url: str):
     # Once you've obtained the ID token, use it to make an authenticated call
     # to the target audience.
     credentials.refresh(request)
-    # print(credentials.token)
-    print("Generated ID token.")
+    return credentials.token
