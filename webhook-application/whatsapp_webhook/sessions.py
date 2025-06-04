@@ -10,7 +10,7 @@ def create_session(user: str, app_name: str,session_id: str):
 
     # Encabezados
     headers = {
-   #     "Authorization": f"Bearer {token}",
+        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
 
