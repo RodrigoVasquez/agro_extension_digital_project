@@ -32,7 +32,7 @@ pp_agent_bq = LlmAgent(
 
 root_agent = LlmAgent(
     name="pp_agent",
-    model="gemini-2.0-flash-001",
+    model="gemini-2.5-flash-preview-05-20",
     instruction=agent_pp_instruction(),
     tools=[
         agent_tool.AgentTool(agent=pp_agent_rag),
