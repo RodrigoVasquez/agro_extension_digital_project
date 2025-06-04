@@ -31,7 +31,7 @@ aa_agent_bq = LlmAgent(
 
 root_agent = LlmAgent(
     name="aa_agent",
-    model="gemini-2.0-flash-001",
+    model="gemini-2.5-flash-preview-05-20",
     instruction=agent_aa_instruction(),
     tools=[
         agent_tool.AgentTool(agent=aa_agent_rag),
