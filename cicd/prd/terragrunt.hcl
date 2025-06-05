@@ -24,19 +24,19 @@ inputs = {
   service_account_display_name_agent_pp = "Agent PP Service Account PRD" # Added PRD
   region = "us-central1"
   # GAR image locations can remain the same if :latest is used for PRD, or be different if specific PRD tags are used. Assuming same for now.
-  gar_image_location_agent_aa = "us-central1-docker.pkg.dev/agro-extension-digital-npe/agents/agent-aa-app:latest"
-  gar_image_location_agent_pp = "us-central1-docker.pkg.dev/agro-extension-digital-npe/agents/agent-pp-app:latest"
+  gar_image_location_agent_aa = "us-central1-docker.pkg.dev/agro-extension-digital-prd/agents/agent-aa-app:latest"
+  gar_image_location_agent_pp = "us-central1-docker.pkg.dev/agro-extension-digital-prd/agents/agent-pp-app:latest"
   google_genai_use_vertexai = "TRUE"
   google_cloud_project = "agro-extension-digital-prd" # Verified
   google_cloud_location = "us-central1"
   service_name = "agent-prd" # Changed from agent-dev
 
   # Datastore IDs from dev are preserved as per instruction (these might need real PRD values later)
-  datastore_aa_id = "projects/agro-extension-digital-npe/locations/global/collections/default_collection/dataStores/0001-adecuacion-agroindustrial_1745450263959"
-  datastore_pp_id = "projects/agro-extension-digital-npe/locations/global/collections/default_collection/dataStores/0001-produccion-primaria_1745450565038"
-  datastore_guides_id = "projects/agro-extension-digital-npe/locations/global/collections/default_collection/dataStores/0001-guias_1745450505033"
-  datastore_faq_id = "projects/agro-extension-digital-npe/locations/global/collections/default_collection/dataStores/0001-faq_1745450327301"
-  datastore_chileprunes_cl_id = "projects/agro-extension-digital-npe/locations/global/collections/default_collection/dataStores/0001-chileprunes-cl_1748096068703"
+  datastore_aa_id = "projects/agro-extension-digital-prd/locations/global/collections/default_collection/dataStores/0001-adecuacion-agroindustrial_1749006214130"
+  datastore_pp_id = "projects/agro-extension-digital-prd/locations/global/collections/default_collection/dataStores/0001-produccion-primaria_1749005766833"
+  datastore_guides_id = "projects/agro-extension-digital-prd/locations/global/collections/default_collection/dataStores/0001-guias_1749005972756"
+  datastore_faq_id = "projects/agro-extension-digital-prd/locations/global/collections/default_collection/dataStores/0001-faq_1749006101377"
+  datastore_chileprunes_cl_id = "projects/agro-extension-digital-prd/locations/global/collections/default_collection/dataStores/0001-chileprunes-cl_1749005569113"
 
   bigquery_integration_application_connector_id = "c0001-bq-connector" # This might need a -prd suffix or be a different connector for PRD
 
@@ -49,7 +49,7 @@ inputs = {
   verify_token = "SET_FOR_PRODUCTION_VERIFY_TOKEN"
 
   # GAR image for webhook - assuming same :latest tag for now
-  gar_image_location_webhook = "us-central1-docker.pkg.dev/agro-extension-digital-npe/agents/agent-webhook-app:latest"
+  gar_image_location_webhook = "us-central1-docker.pkg.dev/agro-extension-digital-prd/agents/agent-webhook-app:latest"
   cloud_run_name_webhook = "agent-webhook-prd" # Added -prd
 
   estandar_aa_app_name = "agent_aa_app_prd" # Added _prd
