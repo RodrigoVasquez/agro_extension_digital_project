@@ -12,7 +12,7 @@ COPY pyproject.toml .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir uv
 
-RUN uv sync
+RUN uv pip install --system
 
 RUN adduser --disabled-password --gecos "" ${USERNAME} && \
     chown -R ${USERNAME}:${USERNAME} /app
