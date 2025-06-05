@@ -109,7 +109,7 @@ resource "google_cloud_run_v2_service" "cloud_run_name_webhook" {
 
       env {
         name  = "APP_URL"
-        value = google_cloud_run_v2_service.cloud_run_name_agent_aa.uri # Changed from var.app_url
+        value = google_cloud_run_v2_service.cloud_run_name_agent_aa.uri
       }
       env {
         name  = "ESTANDAR_AA_FACEBOOK_APP"

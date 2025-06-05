@@ -1,11 +1,12 @@
 import requests
 import os
 import json
+from whatsapp_webhook.utils import idtoken_from_metadata_server
 
 APP_URL=os.getenv("APP_URL")  # Default to localhost if not set
 
 def create_session(user: str, app_name: str,session_id: str):
-    token = "your_token_here"
+    token = idtoken_from_metadata_server(APP_URL)
     session_url = f"{APP_URL}/apps/{app_name}/users/{user}/sessions/{session_id}"
 
     # Encabezados
