@@ -8,11 +8,12 @@ COPY agent_pp_app/ agent_pp_app
 COPY agent_aa_app/ agent_aa_app
 COPY main.py .
 COPY pyproject.toml .
+COPY uv.lock .
 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir uv
 
-RUN uv pip install --system
+RUN uv sync
 
 RUN adduser --disabled-password --gecos "" ${USERNAME} && \
     chown -R ${USERNAME}:${USERNAME} /app
