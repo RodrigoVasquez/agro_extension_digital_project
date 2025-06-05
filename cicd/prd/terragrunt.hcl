@@ -24,8 +24,8 @@ inputs = {
   service_account_display_name_agent_pp = "Agent PP Service Account PRD" # Added PRD
   region = "us-central1"
   # GAR image locations can remain the same if :latest is used for PRD, or be different if specific PRD tags are used. Assuming same for now.
-  gar_image_location_agent_aa = "us-central1-docker.pkg.dev/agro-extension-digital-prd/agents/agent-aa-app:latest"
-  gar_image_location_agent_pp = "us-central1-docker.pkg.dev/agro-extension-digital-prd/agents/agent-pp-app:latest"
+  gar_image_location_agent_aa = "us-central1-docker.pkg.dev/agro-extension-digital-npe/agents/agent-aa-app:latest"
+  gar_image_location_agent_pp = "us-central1-docker.pkg.dev/agro-extension-digital-npe/agents/agent-pp-app:latest"
   google_genai_use_vertexai = "TRUE"
   google_cloud_project = "agro-extension-digital-prd" # Verified
   google_cloud_location = "us-central1"
@@ -44,18 +44,18 @@ inputs = {
   service_account_display_name_webhook_app = "Agent Webhook Service Account PRD" # Added PRD
 
   # Secrets - set to placeholder values for PRD
-  estandar_aa_facebook_app = "SET_FOR_PRODUCTION_ESTANDAR_AA_FACEBOOK_APP"
+  estandar_aa_facebook_app = "https://graph.facebook.com/v22.0/713655771823535/messages"
   estandar_pp_facebook_app = "SET_FOR_PRODUCTION_ESTANDAR_PP_FACEBOOK_APP"
-  verify_token = "SET_FOR_PRODUCTION_VERIFY_TOKEN"
+  verify_token = run_cmd("gcloud", "secrets", "versions", "access", "latest", "--secret=webhook-verify-token", "--project=agro-extension-digital-prd")
 
   # GAR image for webhook - assuming same :latest tag for now
-  gar_image_location_webhook = "us-central1-docker.pkg.dev/agro-extension-digital-prd/agents/agent-webhook-app:latest"
+  gar_image_location_webhook = "us-central1-docker.pkg.dev/agro-extension-digital-npe/agents/agent-webhook-app:latest"
   cloud_run_name_webhook = "agent-webhook-prd" # Added -prd
 
   estandar_aa_app_name = "agent_aa_app_prd" # Added _prd
   estandar_pp_app_name = "agent_pp_app_prd" # Added _prd
 
-  wsp_token = "SET_FOR_PRODUCTION_WSP_TOKEN"
+  wsp_token = run_cmd("gcloud", "secrets", "versions", "access", "latest", "--secret=wsp-token", "--project=agro-extension-digital-prd")
 }
 
 terraform {

@@ -39,7 +39,7 @@ inputs = {
   service_account_display_name_webhook_app = "Agent Webhook Service Account"
   estandar_aa_facebook_app = "https://graph.facebook.com/v22.0/586486637888050/messages"
   estandar_pp_facebook_app = "https://graph.facebook.com/v22.0/586486637888050/messages"
-  verify_token = "your_verify_token"
+  verify_token = run_cmd("gcloud", "secrets", "versions", "access", "latest", "--secret=webhook-verify-token", "--project=agro-extension-digital-npe")
   gar_image_location_webhook = "us-central1-docker.pkg.dev/agro-extension-digital-npe/agents/agent-webhook-app:latest"
   cloud_run_name_webhook = "agent-webhook-dev"
   estandar_aa_app_name = "agent_aa_app"
