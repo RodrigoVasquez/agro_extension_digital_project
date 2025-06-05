@@ -13,7 +13,7 @@ COPY uv.lock .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir uv
 
-RUN uv pip install --system
+RUN uv sync
 
 RUN adduser --disabled-password --gecos "" ${USERNAME} && \
     chown -R ${USERNAME}:${USERNAME} /app
