@@ -62,7 +62,13 @@ async def receive_message(request: Request):
                         print("Sent message:", response)
                         payload['text']['body'] = response
                         payload['to'] = value['contacts'][0]['wa_id']
-                        requests.post(url, headers=headers, data=json.dumps(payload))
+                        try:
+                            resp = requests.post(url, headers=headers, data=json.dumps(payload))
+                            print(f"Respuesta del servidor ({url}): {resp.status_code} - {resp.text}")
+                        except Exception as post_exc:
+                            import traceback
+                            print(f"Error enviando POST a {url}:", post_exc)
+                            traceback.print_exc()
                     # Example: Respond to the message
                     # You can add your logic here to respond to the user
                     # For example, you can use the value['messages'][0]['text']['body'] to get the message text
@@ -70,9 +76,12 @@ async def receive_message(request: Request):
                     return JSONResponse(content={"status": "ok"}, status_code=200)
             return JSONResponse(content={"status": "ok"}, status_code=200)
         else:
+            print("Error:", e)
             return JSONResponse(content={"status": "ok"}, status_code=200)
     except Exception as e:
+        import traceback
         print("Error:", e)
+        traceback.print_exc()
         return JSONResponse(content={"status": "ok"}, status_code=200)
 
 if __name__ == "__main__":
