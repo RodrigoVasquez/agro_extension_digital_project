@@ -44,7 +44,7 @@ inputs = {
   service_account_display_name_webhook_app = "Agent Webhook Service Account PRD" # Added PRD
 
   # Secrets - set to placeholder values for PRD
-  estandar_aa_facebook_app = "https://graph.facebook.com/v22.0/713655771823535/messages"
+  estandar_aa_facebook_app = "https://graph.facebook.com/v22.0/692894087240362/messages"
   estandar_pp_facebook_app = "SET_FOR_PRODUCTION_ESTANDAR_PP_FACEBOOK_APP"
   verify_token = run_cmd("gcloud", "secrets", "versions", "access", "latest", "--secret=webhook-verify-token", "--project=agro-extension-digital-prd")
 
