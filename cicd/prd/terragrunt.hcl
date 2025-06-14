@@ -45,7 +45,7 @@ inputs = {
 
   # Secrets - set to placeholder values for PRD
   estandar_aa_facebook_app = "https://graph.facebook.com/v22.0/692894087240362/messages"
-  estandar_pp_facebook_app = "SET_FOR_PRODUCTION_ESTANDAR_PP_FACEBOOK_APP"
+  estandar_pp_facebook_app = "https://graph.facebook.com/v22.0/696496346875643/messages"
   verify_token = run_cmd("gcloud", "secrets", "versions", "access", "latest", "--secret=webhook-verify-token", "--project=agro-extension-digital-prd")
 
   # GAR image for webhook - assuming same :latest tag for now
