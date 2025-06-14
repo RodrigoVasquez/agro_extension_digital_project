@@ -49,49 +49,69 @@ async def receive_message(request: Request):
             "recipient_type": "individual",
             "type": "text",
                 "text": {
-                    "body": "Hello from Python!"
+                    "body": "Hello from Python!" # Default, will be overwritten
                 }
         }
-        for entry in body['entry']:
-            logging.info(f"Processing entry ID: {entry.get('id', 'N/A')}")
-            for change in entry['changes']:
-                logging.info(f"Processing change field: {change.get('field', 'N/A')}")
-            # Handle different types of changes (e.g., messages, status)
-                if change['field'] == 'messages':
-                # Extract message details
-                    value = change['value']
-                    # Process the incoming message
-                    if value['messages'][0]['type'] == 'text':
-                        user = value['contacts'][0]['wa_id']
-                        message_text = value['messages'][0]['text']['body']
-                        logging.info(f"Processing text message from user {user}: '{message_text}'")
-                        
-                        logging.info(f"Creating session for user: {user}, app: {os.getenv('ESTANDAR_AA_APP_NAME')}")
-                        create_session(user, os.getenv("ESTANDAR_AA_APP_NAME"), user)
-                        
-                        logging.info(f"Sending message to internal service for user {user}")
-                        response = send_message(user, os.getenv("ESTANDAR_AA_APP_NAME"), user, message_text)
-                        logging.info(f"Response from internal send_message: {response}")
-                        
-                        payload['text']['body'] = response
-                        payload['to'] = value['contacts'][0]['wa_id']
-                        
-                        logging.info(f"Payload to WhatsApp API: {json.dumps(payload, indent=2)}")
-                        try:
-                            resp = requests.post(url, headers=headers, data=json.dumps(payload))
-                            logging.info(f"Response from WhatsApp API: Status {resp.status_code} - Text: {resp.text}")
-                            resp.raise_for_status() # Raise an exception for HTTP errors (4xx or 5xx)
-                        except requests.exceptions.RequestException as post_exc:
-                            logging.exception("Error posting to WhatsApp API")
-                    logging.info("Returning 200 OK after processing message.")
-                    return JSONResponse(content={"status": "ok"}, status_code=200)
-            logging.info("Returning 200 OK after processing entry changes.")
-            return JSONResponse(content={"status": "ok"}, status_code=200)
-        else:
-            logging.info("No entries found in the request body or loop completed. Returning 200 OK.")
-            return JSONResponse(content={"status": "ok"}, status_code=200)
+        if 'entry' in body and body['entry']:
+            for entry in body['entry']:
+                logging.info(f"Processing entry ID: {entry.get('id', 'N/A')}")
+                if 'changes' in entry and entry['changes']:
+                    for change in entry['changes']:
+                        logging.info(f"Processing change field: {change.get('field', 'N/A')}")
+                        if change.get('field') == 'messages':
+                            value = change.get('value', {})
+                            
+                            user_wa_id = None
+                            if 'contacts' in value and isinstance(value['contacts'], list) and value['contacts']:
+                                user_wa_id = value['contacts'][0].get('wa_id')
+
+                            if not user_wa_id:
+                                logging.warning(f"No wa_id found in contacts for change value: {value}")
+                                continue # Move to the next change if no user_wa_id
+
+                            if 'messages' in value and isinstance(value['messages'], list):
+                                for message_obj in value['messages']: # Iterate through each message in the 'messages' array
+                                    if message_obj.get('type') == 'text':
+                                        message_text_data = message_obj.get('text', {})
+                                        message_text = message_text_data.get('body')
+
+                                        if not message_text:
+                                            logging.warning(f"No text body in message_obj: {message_obj} for user {user_wa_id}")
+                                            continue # Move to the next message_obj
+
+                                        logging.info(f"Processing text message from user {user_wa_id}: '{message_text}'")
+                                        
+                                        logging.info(f"Creating session for user: {user_wa_id}, app: {os.getenv('ESTANDAR_AA_APP_NAME')}")
+                                        create_session(user_wa_id, os.getenv("ESTANDAR_AA_APP_NAME"), user_wa_id)
+                                        
+                                        logging.info(f"Sending message to internal service for user {user_wa_id}")
+                                        response_from_service = send_message(user_wa_id, os.getenv("ESTANDAR_AA_APP_NAME"), user_wa_id, message_text)
+                                        logging.info(f"Response from internal send_message: {response_from_service}")
+                                        
+                                        payload['text']['body'] = response_from_service
+                                        payload['to'] = user_wa_id
+                                        
+                                        logging.info(f"Payload to WhatsApp API: {json.dumps(payload, indent=2)}")
+                                        try:
+                                            resp = requests.post(url, headers=headers, data=json.dumps(payload))
+                                            logging.info(f"Response from WhatsApp API: Status {resp.status_code} - Text: {resp.text}")
+                                            resp.raise_for_status() # Raise an exception for HTTP errors (4xx or 5xx)
+                                        except requests.exceptions.RequestException as post_exc:
+                                            logging.exception(f"Error posting to WhatsApp API for user {user_wa_id}")
+                                    else:
+                                        logging.info(f"Skipping non-text message (type: {message_obj.get('type')}) for user {user_wa_id}.")
+                            else:
+                                logging.warning(f"No 'messages' array in 'value' or not a list for user {user_wa_id}. Value: {value}")
+                        # Removed premature return that was here
+                # Removed premature return that was here
+        # This 'else' corresponds to the 'for entry in body['entry']:' loop.
+        # It executes if the loop completes normally (all entries processed) or if 'body['entry']' was empty.
+        logging.info("Finished processing all entries/changes or no entries were present. Returning 200 OK.")
+        return JSONResponse(content={"status": "ok"}, status_code=200)
     except Exception as e:
         logging.exception("An unexpected error occurred in receive_message")
+        # Always return 200 OK to WhatsApp to acknowledge receipt and prevent retries,
+        # even if internal processing failed. The error is logged for debugging.
         return JSONResponse(content={"status": "ok"}, status_code=200)
 
 if __name__ == "__main__":
