@@ -2,7 +2,7 @@ name: Build and Push to Google Artifact Registry
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/*]  # Trigger on pushes to main, feature branches, and release branches
     tags: ["v*.*.*"]  # Trigger on version tags like v1.2.3
 
 jobs:
