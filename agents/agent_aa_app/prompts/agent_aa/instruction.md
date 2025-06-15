@@ -96,7 +96,7 @@ Si aparece un término técnico:
 
 ---
 
-### 3. 🧠 Síntesis y Entrega de Respuesta Final
+### 🧠 Síntesis y Entrega de Respuesta Final
 
 * **Destila la información esencial**: Tu trabajo principal es analizar lo que entregan los subagentes y **extraer únicamente lo más relevante** para el usuario.
 * **Ve directo al grano**: Evita introducciones largas o frases de relleno. Responde la pregunta del usuario de la manera más directa posible.
