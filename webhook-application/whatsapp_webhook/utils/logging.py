@@ -170,6 +170,37 @@ class StructuredLogger:
                 extra={"response_data": response_data}
             )
     
+    def log_webhook_verification(self, app_name: str, mode: str, success: bool, extra_data: Optional[Dict] = None):
+        """Log de verificación de webhook."""
+        level = "info" if success else "warning"
+        message = f"{app_name} webhook verification {'successful' if success else 'failed'}"
+        
+        log_data = {
+            "app_name": app_name,
+            "mode": mode,
+            "success": success
+        }
+        if extra_data:
+            log_data.update(extra_data)
+        
+        if level == "info":
+            self.info(message, extra=log_data)
+        else:
+            self.warning(message, extra=log_data)
+    
+    def log_webhook_processing(self, app_name: str, stage: str, extra_data: Optional[Dict] = None):
+        """Log de procesamiento de webhook."""
+        message = f"{app_name} webhook processing: {stage}"
+        
+        log_data = {
+            "app_name": app_name,
+            "stage": stage
+        }
+        if extra_data:
+            log_data.update(extra_data)
+        
+        self.info(message, extra=log_data)
+    
     def _sanitize_payload(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Sanitiza payload removiendo información sensible."""
         sanitized = payload.copy()
