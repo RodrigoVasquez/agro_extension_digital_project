@@ -151,7 +151,7 @@ async def _process_single_text_message(
         })
         
         # Send to WhatsApp API
-        whatsapp_url = f"{whatsapp_api_url}/messages"
+        whatsapp_url = f"{whatsapp_api_url}"
         resp = requests.post(whatsapp_url, headers=headers, json=whatsapp_payload)
         
         # Log response
