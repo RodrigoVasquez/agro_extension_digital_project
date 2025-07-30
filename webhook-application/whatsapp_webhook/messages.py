@@ -9,6 +9,7 @@ from .auth.google_auth import idtoken_from_metadata_server # Updated import
 from .sessions import create_session # Relative import
 from .utils.logging import get_logger # New import
 from .utils.helpers import sanitize_user_id # New import
+from .utils.config import get_agent_app_name # Import for app name mapping
 from .utils.model_utils import (  # New import for domain models
     parse_webhook_payload,
     parse_agent_response,
@@ -35,6 +36,9 @@ def send_message(user: str, app_name: str, session_id: str, message: str) -> str
     """
     logger = get_logger("agent_communication", {"app_name": app_name})
     
+    # Mapear nombre de app a nombre esperado por el agente
+    agent_app_name = get_agent_app_name(app_name)
+    
     if not APP_URL:
         logger.error("APP_URL environment variable is not set")
         return "Error: Servicio de agente no configurado (URL)."
@@ -51,7 +55,7 @@ def send_message(user: str, app_name: str, session_id: str, message: str) -> str
     # Create agent request using Pydantic model
     try:
         agent_request = create_agent_request(
-            app_name=app_name,
+            app_name=agent_app_name,  # Usar el nombre mapeado
             user_id=user,
             session_id=session_id,
             message_text=message,
@@ -69,6 +73,7 @@ def send_message(user: str, app_name: str, session_id: str, message: str) -> str
         "Content-Type": "application/json"
     }
 
+    logger.log_agent_message_request(user, app_name, agent_app_name, session_url)
     logger.log_agent_request(user, app_name, payload_dict)
     
     try:

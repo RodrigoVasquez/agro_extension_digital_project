@@ -3,6 +3,7 @@ import os
 import json
 from .auth.google_auth import idtoken_from_metadata_server
 from .utils.logging import get_logger
+from .utils.config import get_agent_app_name
 
 APP_URL = os.getenv("APP_URL")  # Default to localhost if not set
 
@@ -17,9 +18,12 @@ def create_session(user: str, app_name: str, session_id: str):
     """
     logger = get_logger("sessions", {"app_name": app_name})
     
+    # Mapear nombre de app a nombre esperado por el agente
+    agent_app_name = get_agent_app_name(app_name)
+    
     try:
         token = idtoken_from_metadata_server(APP_URL)
-        session_url = f"{APP_URL}/apps/{app_name}/users/{user}/sessions/{session_id}"
+        session_url = f"{APP_URL}/apps/{agent_app_name}/users/{user}/sessions/{session_id}"
 
         # Headers
         headers = {
@@ -35,7 +39,12 @@ def create_session(user: str, app_name: str, session_id: str):
             }
         }
 
-        logger.info(f"Creating session for user", extra={"user_id": user, "session_id": session_id})
+        logger.info(f"Creating session for user", extra={
+            "user_id": user, 
+            "session_id": session_id,
+            "agent_app_name": agent_app_name,
+            "session_url": session_url
+        })
         
         # Make POST request
         response = requests.post(session_url, headers=headers, json=payload)

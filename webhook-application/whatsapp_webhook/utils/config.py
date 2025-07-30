@@ -43,6 +43,24 @@ def get_whatsapp_token(app_name: str) -> str:
             return os.getenv("WHATSAPP_TOKEN_DEFAULT", os.getenv("WSP_TOKEN", ""))
 
 
+def get_agent_app_name(app_name: str) -> str:
+    """
+    Mapea nombres de aplicación de webhook a nombres esperados por el agente.
+    
+    Args:
+        app_name: Nombre de la aplicación del webhook (AA, PP, etc.)
+        
+    Returns:
+        str: Nombre de la aplicación esperado por el agente
+    """
+    app_name_mapping = {
+        "AA": "agent_aa_app",
+        "PP": "agent_pp_app"
+    }
+    
+    return app_name_mapping.get(app_name.upper(), app_name.lower())
+
+
 def get_agent_url() -> str:
     """
     Obtiene la URL del servicio de agente.

@@ -200,6 +200,30 @@ class StructuredLogger:
             log_data.update(extra_data)
         
         self.info(message, extra=log_data)
+
+    def log_agent_session_creation(self, user_id: str, app_name: str, agent_app_name: str, session_url: str):
+        """Log de creación de sesión con el agente."""
+        self.info(
+            f"Creating agent session",
+            extra={
+                "user_id": user_id,
+                "app_name": app_name,
+                "agent_app_name": agent_app_name,
+                "session_url": session_url
+            }
+        )
+
+    def log_agent_message_request(self, user_id: str, app_name: str, agent_app_name: str, request_url: str):
+        """Log de solicitud de mensaje al agente."""
+        self.info(
+            f"Sending message to agent",
+            extra={
+                "user_id": user_id,
+                "app_name": app_name,
+                "agent_app_name": agent_app_name,
+                "request_url": request_url
+            }
+        )
     
     def _sanitize_payload(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Sanitiza payload removiendo información sensible."""
