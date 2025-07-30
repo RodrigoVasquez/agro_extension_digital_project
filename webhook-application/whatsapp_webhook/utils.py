@@ -1,31 +1,58 @@
-import google
-import google.oauth2.credentials
-from google.auth import compute_engine
-import google.auth.transport.requests
+"""
+DEPRECATED: This file is being phased out in favor of the utils/ package.
 
+For backward compatibility, we re-export the main functions.
+Please update imports to use the specific modules:
 
-def idtoken_from_metadata_server(url: str):
-    """
-    Use the Google Cloud metadata server in the Cloud Run (or AppEngine or Kubernetes etc.,)
-    environment to create an identity token and add it to the HTTP request as part of an
-    Authorization header.
+- Auth: whatsapp_webhook.auth.google_auth
+- External services: whatsapp_webhook.external_services.agent_client, whatsapp_webhook.external_services.whatsapp_client  
+- Utils: whatsapp_webhook.utils.helpers, whatsapp_webhook.utils.config, whatsapp_webhook.utils.logging
+"""
+import warnings
 
-    Args:
-        url: The url or target audience to obtain the ID token for.
-            Examples: http://www.example.com
-    """
+# Re-export auth functions for backward compatibility
+from .auth.google_auth import idtoken_from_metadata_server, get_id_token
 
-    request = google.auth.transport.requests.Request()
-    # Set the target audience.
-    # Setting "use_metadata_identity_endpoint" to "True" will make the request use the default application
-    # credentials. Optionally, you can also specify a specific service account to use by mentioning
-    # the service_account_email.
-    credentials = compute_engine.IDTokenCredentials(
-        request=request, target_audience=url, use_metadata_identity_endpoint=True
-    )
+# Re-export helper functions
+from .utils.helpers import (
+    generate_session_id,
+    sanitize_user_id,
+    validate_phone_number,
+    normalize_phone_number
+)
 
-    # Get the ID token.
-    # Once you've obtained the ID token, use it to make an authenticated call
-    # to the target audience.
-    credentials.refresh(request)
-    return credentials.token
+# Re-export config functions  
+from .utils.config import (
+    get_whatsapp_api_url,
+    get_whatsapp_token,
+    get_agent_url
+)
+
+# Re-export logging functions
+from .utils.logging import get_logger, setup_logging
+
+# Issue deprecation warning
+warnings.warn(
+    "whatsapp_webhook.utils is deprecated. Use specific modules: "
+    "whatsapp_webhook.auth, whatsapp_webhook.external_services, whatsapp_webhook.utils",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+__all__ = [
+    # Auth (deprecated - use whatsapp_webhook.auth.google_auth)
+    "idtoken_from_metadata_server",
+    "get_id_token",
+    # Helpers (deprecated - use whatsapp_webhook.utils.helpers)
+    "generate_session_id",
+    "sanitize_user_id", 
+    "validate_phone_number",
+    "normalize_phone_number",
+    # Config (deprecated - use whatsapp_webhook.utils.config)
+    "get_whatsapp_api_url",
+    "get_whatsapp_token",
+    "get_agent_url",
+    # Logging (deprecated - use whatsapp_webhook.utils.logging)
+    "get_logger",
+    "setup_logging"
+]

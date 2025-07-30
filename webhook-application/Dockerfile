@@ -1,21 +1,29 @@
-FROM python:3.12-slim
+FROM debian:bookworm-slim
+
 WORKDIR /app
 
 # create a non-root user variable
 ARG USERNAME=whatapp-webhook
 
+RUN adduser --disabled-password --gecos "" ${USERNAME} && \
+    chown -R ${USERNAME}:${USERNAME} /app
+
+
+RUN apt-get update && \
+    apt-get install -y curl && \
+    rm -rf /var/lib/apt/lists/*
+
+USER ${USERNAME}
+
 COPY whatsapp_webhook/ whatsapp_webhook
 COPY main.py .
 COPY pyproject.toml .
 
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir uv
+RUN curl -Ls https://astral.sh/uv/install.sh -o /tmp/install.sh
 
-RUN uv sync
-
-RUN adduser --disabled-password --gecos "" ${USERNAME} && \
-    chown -R ${USERNAME}:${USERNAME} /app
-
+RUN sh /tmp/install.sh
+# Usar la ruta completa de uv
+RUN ~/.local/bin/uv sync
 
 USER ${USERNAME}
 

@@ -1,15 +1,85 @@
 [project]
-name = "whatapps-webhook"
+name = "whatsapp-webhook"
 version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
-requires-python = ">=3.12"
+description = "Modular WhatsApp webhook processor for handling various message types and integrating with AI agent services"
+requires-python = "==3.12.*"
 dependencies = [
-    "fastapi",
-    "uvicorn",
-    "gunicorn",
-    "httpx",
-    "requests",
-    "uuid",
-    "google-auth"
+    # Web framework and server
+    "fastapi>=0.104.0,<0.120.0",
+    "uvicorn[standard]>=0.24.0,<0.35.0",
+    "gunicorn>=21.2.0,<23.0.0",
+    
+    # HTTP clients
+    "httpx>=0.25.0,<0.30.0",
+    "requests>=2.31.0,<3.0.0",
+    
+    # Data validation and serialization
+    "pydantic>=2.5.0,<3.0.0",
+    
+    # Google Cloud authentication
+    "google-auth>=2.23.0,<3.0.0",
+    
+    # Type checking and development (optional but recommended)
+    "typing-extensions>=4.8.0,<5.0.0",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0,<9.0.0",
+    "pytest-asyncio>=0.21.0,<0.25.0",
+    "pytest-cov>=4.1.0,<6.0.0",
+    "black>=23.0.0,<25.0.0",
+    "flake8>=6.0.0,<8.0.0",
+    "mypy>=1.5.0,<2.0.0",
+]
+
+test = [
+    "pytest>=7.4.0,<9.0.0",
+    "pytest-asyncio>=0.21.0,<0.25.0",
+    "pytest-mock>=3.11.0,<4.0.0",
+    "httpx>=0.25.0,<0.30.0",  # For testing HTTP clients
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["whatsapp_webhook"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+
+[tool.black]
+line-length = 100
+target-version = ['py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
