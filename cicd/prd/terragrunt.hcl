@@ -56,7 +56,7 @@ inputs = {
   estandar_pp_app_name = "agent_pp_app" # Added _prd
 
   wsp_token = run_cmd("gcloud", "secrets", "versions", "access", "latest", "--secret=wsp-token", "--project=agro-extension-digital-prd")
-  log_level = "INFO"  # Production environment uses INFO level for performance and log volume control
+  log_level = "DEBUG"  # Production environment uses INFO level for performance and log volume control
 }
 
 terraform {
