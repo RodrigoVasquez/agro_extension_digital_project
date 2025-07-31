@@ -142,7 +142,7 @@ async def _send_whatsapp_acknowledgment(
         logger.info(f"Sending acknowledgment for {message_context}", extra={"user_id": user_wa_id})
         
         # Send to WhatsApp API
-        whatsapp_url = f"{whatsapp_api_url}/messages"
+        whatsapp_url = f"{whatsapp_api_url}"
         resp = requests.post(whatsapp_url, headers=headers, json=whatsapp_payload)
         
         # Log response
