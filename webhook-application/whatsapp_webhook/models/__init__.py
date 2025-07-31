@@ -1,19 +1,43 @@
 """
 Domain models for WhatsApp webhook processing using Pydantic v2.
+Now supports all WhatsApp message types.
 """
 
 from .messages import (
-    WhatsAppTextMessage,
+    # Main message models
+    WhatsAppMessage,
     WhatsAppContact,
     WhatsAppMessageValue,
     WhatsAppChange,
     WhatsAppEntry,
     WhatsAppWebhookPayload,
+    
+    # Content type models
+    WhatsAppTextContent,
+    WhatsAppMediaContent,
+    WhatsAppImageContent,
+    WhatsAppAudioContent,
+    WhatsAppVideoContent,
+    WhatsAppDocumentContent,
+    WhatsAppStickerContent,
+    WhatsAppLocationContent,
+    WhatsAppContactsContent,
+    WhatsAppInteractiveContent,
+    WhatsAppReactionContent,
+    WhatsAppSystemContent,
+    
+    # Agent communication models
     AgentMessage,
     AgentMessagePart,
     AgentResponse,
+    AgentRequestPayload,
+    
+    # Outgoing message models
     WhatsAppOutgoingMessage,
-    WhatsAppTextBody
+    WhatsAppOutgoingTextBody,
+    
+    # Processing context models
+    MessageProcessingContext
 )
 
 from .api_models import (
@@ -26,18 +50,41 @@ from .api_models import (
 )
 
 __all__ = [
-    # Domain models
-    "WhatsAppTextMessage",
+    # Main message models
+    "WhatsAppMessage",
     "WhatsAppContact", 
     "WhatsAppMessageValue",
     "WhatsAppChange",
     "WhatsAppEntry",
     "WhatsAppWebhookPayload",
+    
+    # Content type models
+    "WhatsAppTextContent",
+    "WhatsAppMediaContent",
+    "WhatsAppImageContent",
+    "WhatsAppAudioContent",
+    "WhatsAppVideoContent",
+    "WhatsAppDocumentContent",
+    "WhatsAppStickerContent",
+    "WhatsAppLocationContent",
+    "WhatsAppContactsContent",
+    "WhatsAppInteractiveContent",
+    "WhatsAppReactionContent",
+    "WhatsAppSystemContent",
+    
+    # Agent communication models
     "AgentMessage",
     "AgentMessagePart",
     "AgentResponse",
+    "AgentRequestPayload",
+    
+    # Outgoing message models
     "WhatsAppOutgoingMessage",
-    "WhatsAppTextBody",
+    "WhatsAppOutgoingTextBody",
+    
+    # Processing context models
+    "MessageProcessingContext",
+    
     # API models
     "WebhookVerificationRequest",
     "WebhookVerificationResponse",
