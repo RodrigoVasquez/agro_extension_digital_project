@@ -173,7 +173,7 @@ async def _process_single_text_message(
 ) -> None:
     """
     Processes a single text message from WhatsApp.
-    Guarantees that an acknowledgment is always sent.
+    Sends immediate acknowledgment, then processes with agent.
     
     Args:
         user_wa_id: WhatsApp user ID
@@ -186,8 +186,23 @@ async def _process_single_text_message(
     
     logger.log_message_received("text", user_wa_id, app_name, {"message_length": len(message_text)})
     
+    # STEP 1: Send immediate acknowledgment to WhatsApp to prevent retries
+    immediate_ack = "Mensaje recibido, procesando..."
+    ack_sent = await _send_whatsapp_acknowledgment(
+        user_wa_id=user_wa_id,
+        message_text=immediate_ack,
+        app_name=app_name,
+        whatsapp_api_url=whatsapp_api_url,
+        wsp_token=wsp_token,
+        message_context="immediate ack"
+    )
+    
+    if not ack_sent:
+        logger.error(f"Failed to send immediate acknowledgment to {user_wa_id}", extra={"user_id": user_wa_id})
+        # Continue processing anyway, but log the failure
+    
+    # STEP 2: Now process the message with agent
     response_text = "Disculpa, hubo un problema procesando tu mensaje. Por favor intenta de nuevo."
-    ack_sent = False
     
     try:
         # Create user session
@@ -211,30 +226,29 @@ async def _process_single_text_message(
                 logger.error(f"Error getting response from agent service: {e}", extra={"user_id": user_wa_id}, exc_info=True)
                 response_text = "Disculpa, hubo un problema con el servicio. Por favor intenta de nuevo."
 
-        # Always attempt to send acknowledgment
-        ack_sent = await _send_whatsapp_acknowledgment(
+        # STEP 3: Send the actual response from agent
+        final_ack_sent = await _send_whatsapp_acknowledgment(
             user_wa_id=user_wa_id,
             message_text=response_text,
             app_name=app_name,
             whatsapp_api_url=whatsapp_api_url,
             wsp_token=wsp_token,
-            message_context="text message"
+            message_context="agent response"
         )
         
     except Exception as e:
         logger.error(f"Unexpected error in text message processing: {e}", extra={"user_id": user_wa_id}, exc_info=True)
         
-        # Try to send error acknowledgment
-        if not ack_sent:
-            error_response = "Disculpa, hubo un error inesperado. Por favor intenta de nuevo."
-            await _send_whatsapp_acknowledgment(
-                user_wa_id=user_wa_id,
-                message_text=error_response,
-                app_name=app_name,
-                whatsapp_api_url=whatsapp_api_url,
-                wsp_token=wsp_token,
-                message_context="error recovery"
-            )
+        # Send error response
+        error_response = "Disculpa, hubo un error inesperado. Por favor intenta de nuevo."
+        await _send_whatsapp_acknowledgment(
+            user_wa_id=user_wa_id,
+            message_text=error_response,
+            app_name=app_name,
+            whatsapp_api_url=whatsapp_api_url,
+            wsp_token=wsp_token,
+            message_context="error recovery"
+        )
 
 
 def _validate_webhook_config(app_name_env_var: str, facebook_app_env_var: str) -> Optional[Dict[str, str]]:
@@ -518,7 +532,7 @@ async def _process_non_text_message(
 ) -> None:
     """
     Process non-text messages from WhatsApp.
-    Guarantees that an acknowledgment is always sent.
+    Sends immediate acknowledgment, then processes message.
     
     Args:
         sender_wa_id: WhatsApp user ID
@@ -538,7 +552,22 @@ async def _process_non_text_message(
         "message_id": message.id
     })
     
-    # Default acknowledgment message
+    # STEP 1: Send immediate acknowledgment to WhatsApp
+    immediate_ack = f"Mensaje {message_type} recibido, procesando..."
+    ack_sent = await _send_whatsapp_acknowledgment(
+        user_wa_id=sender_wa_id,
+        message_text=immediate_ack,
+        app_name=app_name,
+        whatsapp_api_url=whatsapp_api_url,
+        wsp_token=wsp_token,
+        message_context=f"immediate ack for {message_type}"
+    )
+    
+    if not ack_sent:
+        logger.error(f"Failed to send immediate acknowledgment for {message_type} to {sender_wa_id}", 
+                    extra={"user_id": sender_wa_id})
+    
+    # STEP 2: Process the message and send final response
     response_text = f"Gracias por enviar {message_content}. Por el momento solo puedo procesar mensajes de texto. ¿En qué puedo ayudarte?"
     
     try:
@@ -550,21 +579,21 @@ async def _process_non_text_message(
             logger.warning(f"Could not create session for non-text message: {e}", extra={"user_id": sender_wa_id})
             # Continue anyway, session creation failure shouldn't prevent acknowledgment
         
-        # Always send acknowledgment
+        # Send final response
         await _send_whatsapp_acknowledgment(
             user_wa_id=sender_wa_id,
             message_text=response_text,
             app_name=app_name,
             whatsapp_api_url=whatsapp_api_url,
             wsp_token=wsp_token,
-            message_context=f"{message_type} message"
+            message_context=f"{message_type} final response"
         )
         
     except Exception as e:
         logger.error(f"Error processing {message_type} message: {e}", 
                     extra={"user_id": sender_wa_id}, exc_info=True)
         
-        # Try to send error acknowledgment
+        # Send error response
         error_response = "Gracias por tu mensaje. Hubo un problema procesándolo, pero solo puedo ayudarte con mensajes de texto."
         await _send_whatsapp_acknowledgment(
             user_wa_id=sender_wa_id,
