@@ -12,7 +12,7 @@ vertex_search_tool_chileprunes_cl= VertexAiSearchTool(data_store_id=os.getenv("D
 
 aa_agent_rag = LlmAgent(
    name="aa_agent_rag",
-   model="gemini-2.5-flash",
+   model="gemini-2.5-flash-lite",
    instruction=agent_aa_rag_instruction(),
    description=agent_aa_rag_description(),
    tools=[vertex_search_tool_aa,
@@ -23,7 +23,7 @@ aa_agent_rag = LlmAgent(
 
 aa_agent_bq = LlmAgent(
     name="aa_agent_bq",
-    model="gemini-2.5-flash",
+    model="gemini-2.5-flash-lite",
     instruction=agent_aa_bq_instruction(),
     description=agent_aa_bq_description(),
     tools= [estandar_aa_tool],
@@ -31,7 +31,7 @@ aa_agent_bq = LlmAgent(
 
 root_agent = LlmAgent(
     name="aa_agent",
-    model="gemini-2.5-pro",
+    model="gemini-2.5-flash",
     instruction=agent_aa_instruction(),
     tools=[
         agent_tool.AgentTool(agent=aa_agent_rag),
