@@ -191,10 +191,17 @@ async def _process_single_text_message(
     try:
         create_session(sender_wa_id, app_name, sender_wa_id)
         
-        agent_response = await _process_message_with_agent(
-            sender_wa_id=sender_wa_id,
-            message=message,
-            app_name=app_name
+        # Get message text from the message object
+        message_text = message.get_message_content()
+        if not message_text:
+            raise ValueError("No message content found")
+        
+        # Process with agent using send_message function
+        agent_response = send_message(
+            user=sender_wa_id,
+            app_name=app_name,
+            session_id=sender_wa_id,
+            message=message_text
         )
         
         # Step 3: Send agent response or fallback
@@ -252,112 +259,11 @@ def _validate_webhook_config(app_name_env_var: str, facebook_app_env_var: str) -
     }
 
 
-def _extract_text_messages_from_change(change: Dict[str, Any], app_name: str) -> List[Dict[str, str]]:
-    """
-    Extract text messages from a webhook change object.
-    
-    Args:
-        change: WhatsApp webhook change object
-        app_name: Application name for logging
-        
-    Returns:
-        List of dictionaries with user_wa_id and message_text
-    """
-    messages = []
-    
-    if change.get('field') != 'messages':
-        return messages
-        
-    value = change.get('value', {})
-    
-    # Extract sender WhatsApp ID
-    user_wa_id = None
-    if 'contacts' in value and isinstance(value['contacts'], list) and value['contacts']:
-        user_wa_id = value['contacts'][0].get('wa_id')
-
-    if not user_wa_id:
-        logging.warning(f"No wa_id found in contacts for app {app_name}. Value: {value}")
-        return messages
-
-    # Extract messages
-    if 'messages' in value and isinstance(value['messages'], list):
-        for message_obj in value['messages']:
-            message_id = message_obj.get('id', 'N/A')
-            
-            if message_obj.get('type') == 'text':
-                message_text_data = message_obj.get('text', {})
-                message_text = message_text_data.get('body')
-
-                if message_text:
-                    messages.append({
-                        "user_wa_id": user_wa_id,
-                        "message_text": message_text,
-                        "message_id": message_id
-                    })
-                else:
-                    logging.warning(f"No text body in message (ID: {message_id}) for user {user_wa_id}, app {app_name}")
-            else:
-                logging.info(f"Skipping non-text message (ID: {message_id}, Type: {message_obj.get('type')}) for user {user_wa_id}, app {app_name}")
-    else:
-        logging.warning(f"No 'messages' array in 'value' for user {user_wa_id}, app {app_name}")
-
-    return messages
-
-
-async def _process_webhook_entry(entry: Dict[str, Any], config: Dict[str, str]) -> None:
-    """
-    Process a single webhook entry.
-    
-    Args:
-        entry: WhatsApp webhook entry object
-        config: Validated configuration dictionary
-    """
-    entry_id = entry.get('id', 'N/A')
-    app_name = config["app_name"]
-    
-    logging.debug(f"Processing entry ID: {entry_id} for app {app_name}")
-    
-    if 'changes' not in entry or not entry['changes']:
-        logging.debug(f"No 'changes' in entry {entry_id} for app {app_name}")
-        return
-
-    for change in entry['changes']:
-        field = change.get('field', 'N/A')
-        logging.debug(f"Processing change field: {field} in entry {entry_id} for app {app_name}")
-        
-        # Extract text messages from this change
-        text_messages = _extract_text_messages_from_change(change, app_name)
-        
-        # Process each text message
-        for msg_data in text_messages:
-            try:
-                await _process_single_text_message(
-                    user_wa_id=msg_data["user_wa_id"],
-                    message_text=msg_data["message_text"],
-                    app_name=app_name,
-                    whatsapp_api_url=config["whatsapp_api_url"],
-                    wsp_token=config["wsp_token"]
-                )
-            except Exception as e:
-                logging.error(f"Error processing message {msg_data['message_id']}: {e}", exc_info=True)
-                # Send acknowledgment even if processing fails
-                try:
-                    await _send_whatsapp_acknowledgment(
-                        user_wa_id=msg_data["user_wa_id"],
-                        message_text="Disculpa, hubo un error procesando tu mensaje. Por favor intenta de nuevo.",
-                        app_name=app_name,
-                        whatsapp_api_url=config["whatsapp_api_url"],
-                        wsp_token=config["wsp_token"],
-                        message_context="legacy processing error"
-                    )
-                except Exception as ack_error:
-                    logging.error(f"Failed to send acknowledgment in legacy processing: {ack_error}", exc_info=True)
-
 async def process_incoming_webhook_payload(body: dict, app_name_env_var: str, facebook_app_env_var: str) -> None:
     """
     Core logic to process incoming webhook events from WhatsApp.
-    Uses structured processing with domain models for better maintainability.
-    Now supports all WhatsApp message types.
+    Uses structured processing with domain models.
+    Supports all WhatsApp message types.
     
     Args:
         body: WhatsApp webhook payload
@@ -376,15 +282,9 @@ async def process_incoming_webhook_payload(body: dict, app_name_env_var: str, fa
     webhook_payload = parse_webhook_payload(body)
     if not webhook_payload:
         logging.error(f"Failed to parse webhook payload for app {app_name}")
-        
-        # Try to send acknowledgment to any user found in raw payload
-        await _send_fallback_acknowledgments(body, config)
-        
-        # Try legacy processing as fallback
-        await _process_webhook_legacy(body, config)
         return
 
-    # Extract all messages (not just text) using the domain model
+    # Extract all messages using the domain model
     all_messages = webhook_payload.get_all_messages()
     
     if not all_messages:
@@ -401,26 +301,13 @@ async def process_incoming_webhook_payload(body: dict, app_name_env_var: str, fa
         try:
             if message.is_text_message():
                 # Process text messages with the agent
-                message_text = message.get_message_content()
-                if message_text:
-                    await _process_single_text_message(
-                        user_wa_id=sender_wa_id,
-                        message_text=message_text,
-                        app_name=app_name,
-                        whatsapp_api_url=config["whatsapp_api_url"],
-                        wsp_token=config["wsp_token"]
-                    )
-                else:
-                    logging.warning(f"Could not extract text content from message {message_id}")
-                    # Send acknowledgment even if we can't extract content
-                    await _send_whatsapp_acknowledgment(
-                        user_wa_id=sender_wa_id,
-                        message_text="Disculpa, hubo un problema procesando tu mensaje de texto. Por favor intenta de nuevo.",
-                        app_name=app_name,
-                        whatsapp_api_url=config["whatsapp_api_url"],
-                        wsp_token=config["wsp_token"],
-                        message_context="malformed text message"
-                    )
+                await _process_single_text_message(
+                    sender_wa_id=sender_wa_id,
+                    message=message,
+                    app_name=app_name,
+                    whatsapp_api_url=config["whatsapp_api_url"],
+                    wsp_token=config["wsp_token"]
+                )
             else:
                 # Handle non-text messages
                 await _process_non_text_message(
@@ -444,52 +331,6 @@ async def process_incoming_webhook_payload(body: dict, app_name_env_var: str, fa
                 )
             except Exception as ack_error:
                 logging.error(f"Failed to send error acknowledgment to {sender_wa_id}: {ack_error}", exc_info=True)
-
-
-async def _send_fallback_acknowledgments(body: dict, config: Dict[str, str]) -> None:
-    """
-    Send acknowledgments when webhook parsing fails completely.
-    Attempts to extract user IDs from raw payload and send generic acknowledgments.
-    
-    Args:
-        body: Raw webhook payload
-        config: Validated configuration dictionary
-    """
-    app_name = config["app_name"]
-    logger = get_logger("fallback_ack", {"app_name": app_name})
-    
-    try:
-        # Try to extract user IDs from raw payload
-        user_ids = set()
-        
-        if isinstance(body, dict) and "entry" in body:
-            for entry in body.get("entry", []):
-                if isinstance(entry, dict) and "changes" in entry:
-                    for change in entry.get("changes", []):
-                        if isinstance(change, dict) and "value" in change:
-                            value = change.get("value", {})
-                            if isinstance(value, dict) and "contacts" in value:
-                                for contact in value.get("contacts", []):
-                                    if isinstance(contact, dict) and "wa_id" in contact:
-                                        user_ids.add(contact["wa_id"])
-        
-        # Send generic acknowledgment to each user found
-        for user_id in user_ids:
-            try:
-                logger.info(f"Sending fallback acknowledgment to user {user_id}")
-                await _send_whatsapp_acknowledgment(
-                    user_wa_id=user_id,
-                    message_text="Gracias por tu mensaje. Hubo un problema procesándolo, pero estamos trabajando para solucionarlo.",
-                    app_name=app_name,
-                    whatsapp_api_url=config["whatsapp_api_url"],
-                    wsp_token=config["wsp_token"],
-                    message_context="fallback acknowledgment"
-                )
-            except Exception as e:
-                logger.error(f"Failed to send fallback acknowledgment to {user_id}: {e}", exc_info=True)
-                
-    except Exception as e:
-        logger.error(f"Error in fallback acknowledgment processing: {e}", exc_info=True)
 
 
 async def _process_non_text_message(
@@ -525,30 +366,6 @@ async def _process_non_text_message(
         message_context="info"
     )
 
-
-async def _process_webhook_legacy(body: dict, config: Dict[str, str]) -> None:
-    """
-    Legacy webhook processing for backwards compatibility.
-    Used as fallback when Pydantic parsing fails.
-    
-    Args:
-        body: Raw webhook payload
-        config: Validated configuration dictionary
-    """
-    app_name = config["app_name"]
-    logging.info(f"Using legacy processing for app: {app_name}")
-
-    if 'entry' not in body or not body['entry']:
-        logging.info(f"No 'entry' in body for app {app_name}")
-        return
-
-    # Process each entry
-    for entry in body['entry']:
-        try:
-            await _process_webhook_entry(entry, config)
-        except Exception as e:
-            entry_id = entry.get('id', 'N/A')
-            logging.error(f"Error processing entry {entry_id}: {e}", exc_info=True)
 
 async def receive_message_aa(body: dict) -> None:
     """
