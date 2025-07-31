@@ -23,7 +23,7 @@ def create_session(user: str, app_name: str, session_id: str):
     
     try:
         token = idtoken_from_metadata_server(APP_URL)
-        session_url = f"{APP_URL}/apps/{agent_app_name}/users/{user}/sessions/{session_id}"
+        session_url = f"adk"
 
         # Headers
         headers = {
@@ -47,7 +47,7 @@ def create_session(user: str, app_name: str, session_id: str):
         })
         
         # Make POST request
-        response = requests.post(session_url, headers=headers, json=payload)
+        response = requests.post(f"{APP_URL}/apps/{agent_app_name}/users/{user}/sessions/{session_id}", headers=headers, json=payload)
         response.raise_for_status()
         
         logger.info("Session created successfully", extra={"user_id": user, "session_id": session_id})
