@@ -1,3 +1,4 @@
+import asyncio
 import requests
 import os
 import json
@@ -173,21 +174,11 @@ async def _process_single_text_message(
 ) -> None:
     """
     Process a single text message from WhatsApp.
-    Sends ACK, processes with agent, and responds.
+    Processes with agent and responds (no visible ACK to user).
     """
     logger = get_logger("message_processing", {"app_name": app_name})
     
-    # Step 1: Send immediate ACK
-    await _send_whatsapp_acknowledgment(
-        user_wa_id=sender_wa_id,
-        message_text="✓",  # Simple checkmark ACK
-        app_name=app_name,
-        whatsapp_api_url=whatsapp_api_url,
-        wsp_token=wsp_token,
-        message_context="ack"
-    )
-    
-    # Step 2: Process and respond
+    # Process and respond directly (no visible ACK to user)
     try:
         create_session(sender_wa_id, app_name, sender_wa_id)
         
@@ -204,7 +195,7 @@ async def _process_single_text_message(
             message=message_text
         )
         
-        # Step 3: Send agent response or fallback
+        # Send agent response or fallback (this is the only visible message)
         response_text = agent_response or "No pude procesar tu mensaje. Intenta de nuevo."
         
         await _send_whatsapp_acknowledgment(
@@ -259,44 +250,28 @@ def _validate_webhook_config(app_name_env_var: str, facebook_app_env_var: str) -
     }
 
 
-async def process_incoming_webhook_payload(body: dict, app_name_env_var: str, facebook_app_env_var: str) -> None:
+async def _process_messages_in_background(
+    all_messages: List[tuple],
+    config: Dict[str, str]
+) -> None:
     """
-    Core logic to process incoming webhook events from WhatsApp.
-    Uses structured processing with domain models.
-    Supports all WhatsApp message types.
+    Process messages in background after ACK to Facebook.
     
     Args:
-        body: WhatsApp webhook payload
-        app_name_env_var: Environment variable name for app name
-        facebook_app_env_var: Environment variable name for Facebook app URL
+        all_messages: List of (sender_wa_id, message) tuples
+        config: Validated configuration dictionary
     """
-    # Validate configuration
-    config = _validate_webhook_config(app_name_env_var, facebook_app_env_var)
-    if not config:
-        return
-
     app_name = config["app_name"]
-    logging.info(f"Processing incoming webhook for app: {app_name}")
-
-    # Parse webhook payload using Pydantic model
-    webhook_payload = parse_webhook_payload(body)
-    if not webhook_payload:
-        logging.error(f"Failed to parse webhook payload for app {app_name}")
-        return
-
-    # Extract all messages using the domain model
-    all_messages = webhook_payload.get_all_messages()
+    logger = get_logger("background_processing", {"app_name": app_name})
     
-    if not all_messages:
-        logging.info(f"No messages found in webhook payload for app {app_name}")
-        return
-
+    logger.info(f"Starting background processing of {len(all_messages)} messages for app {app_name}")
+    
     # Process each message based on its type
     for sender_wa_id, message in all_messages:
         message_id = message.id
         message_type = message.type
         
-        logging.info(f"Processing {message_type} message (ID: {message_id}) from user {sender_wa_id}, app {app_name}")
+        logger.info(f"Background processing {message_type} message (ID: {message_id}) from user {sender_wa_id}")
         
         try:
             if message.is_text_message():
@@ -318,7 +293,7 @@ async def process_incoming_webhook_payload(body: dict, app_name_env_var: str, fa
                     wsp_token=config["wsp_token"]
                 )
         except Exception as e:
-            logging.error(f"Error processing message {message_id} from {sender_wa_id}: {e}", exc_info=True)
+            logger.error(f"Error in background processing message {message_id} from {sender_wa_id}: {e}", exc_info=True)
             # Send acknowledgment even if processing fails
             try:
                 await _send_whatsapp_acknowledgment(
@@ -330,7 +305,58 @@ async def process_incoming_webhook_payload(body: dict, app_name_env_var: str, fa
                     message_context="error recovery"
                 )
             except Exception as ack_error:
-                logging.error(f"Failed to send error acknowledgment to {sender_wa_id}: {ack_error}", exc_info=True)
+                logger.error(f"Failed to send error acknowledgment to {sender_wa_id}: {ack_error}", exc_info=True)
+    
+    logger.info(f"Background processing completed for app {app_name}")
+
+
+async def process_incoming_webhook_payload(body: dict, app_name_env_var: str, facebook_app_env_var: str) -> bool:
+    """
+    Core logic to process incoming webhook events from WhatsApp.
+    ACKs immediately to Facebook, then processes messages in background.
+    
+    Args:
+        body: WhatsApp webhook payload
+        app_name_env_var: Environment variable name for app name
+        facebook_app_env_var: Environment variable name for Facebook app URL
+        
+    Returns:
+        bool: True for immediate ACK to Facebook (HTTP 200)
+    """
+    # Validate configuration
+    config = _validate_webhook_config(app_name_env_var, facebook_app_env_var)
+    if not config:
+        logging.error("Failed to validate webhook configuration")
+        return False
+
+    app_name = config["app_name"]
+    logging.info(f"Processing incoming webhook for app: {app_name}")
+
+    # Parse webhook payload using Pydantic model
+    webhook_payload = parse_webhook_payload(body)
+    if not webhook_payload:
+        logging.error(f"Failed to parse webhook payload for app {app_name}")
+        # Even if parsing fails, return True to ACK to Facebook and prevent retries
+        return True
+
+    # Extract all messages using the domain model
+    all_messages = webhook_payload.get_all_messages()
+    
+    if not all_messages:
+        logging.info(f"No messages found in webhook payload for app {app_name}")
+        # No messages to process, but ACK to Facebook
+        return True
+
+    # CRITICAL: ACK to Facebook immediately by returning True
+    # Process messages in background task to avoid timeout
+    logging.info(f"Scheduling background processing for {len(all_messages)} messages")
+    
+    # Start background processing without waiting for completion
+    asyncio.create_task(_process_messages_in_background(all_messages, config))
+    
+    # Return True immediately for Facebook ACK
+    logging.info(f"Webhook ACK sent immediately for app {app_name}")
+    return True
 
 
 async def _process_non_text_message(
@@ -342,21 +368,11 @@ async def _process_non_text_message(
 ) -> None:
     """
     Process non-text messages from WhatsApp.
-    Sends ACK and informs user about text-only support.
+    Sends info message about text-only support (no visible ACK to user).
     """
     logger = get_logger("message_processing", {"app_name": app_name})
     
-    # Step 1: Send ACK
-    await _send_whatsapp_acknowledgment(
-        user_wa_id=sender_wa_id,
-        message_text="✓",
-        app_name=app_name,
-        whatsapp_api_url=whatsapp_api_url,
-        wsp_token=wsp_token,
-        message_context="ack"
-    )
-    
-    # Step 2: Send info message
+    # Send info message directly (no visible ACK to user)
     await _send_whatsapp_acknowledgment(
         user_wa_id=sender_wa_id,
         message_text="Solo puedo procesar mensajes de texto. ¿En qué puedo ayudarte?",
@@ -367,35 +383,55 @@ async def _process_non_text_message(
     )
 
 
-async def receive_message_aa(body: dict) -> None:
+async def receive_message_aa(body: dict) -> bool:
     """
     Handles incoming messages for Estandar AA application.
     
     Args:
         body: WhatsApp webhook payload dictionary
+        
+    Returns:
+        bool: True for HTTP 200 ACK to Facebook, False for HTTP 500
     """
     logger = get_logger("webhook_aa")
     logger.info("Processing AA webhook request")
     
-    await process_incoming_webhook_payload(
-        body=body,
-        app_name_env_var="ESTANDAR_AA_APP_NAME",
-        facebook_app_env_var="ESTANDAR_AA_FACEBOOK_APP"
-    )
+    try:
+        result = await process_incoming_webhook_payload(
+            body=body,
+            app_name_env_var="ESTANDAR_AA_APP_NAME",
+            facebook_app_env_var="ESTANDAR_AA_FACEBOOK_APP"
+        )
+        logger.info(f"AA webhook processing result: {result}")
+        return result
+    except Exception as e:
+        logger.error(f"Unexpected error in AA webhook processing: {e}", exc_info=True)
+        # Return True to ACK to Facebook even on unexpected errors to prevent retries
+        return True
 
 
-async def receive_message_pp(body: dict) -> None:
+async def receive_message_pp(body: dict) -> bool:
     """
     Handles incoming messages for Estandar PP application.
     
     Args:
         body: WhatsApp webhook payload dictionary
+        
+    Returns:
+        bool: True for HTTP 200 ACK to Facebook, False for HTTP 500
     """
     logger = get_logger("webhook_pp")
     logger.info("Processing PP webhook request")
     
-    await process_incoming_webhook_payload(
-        body=body,
-        app_name_env_var="ESTANDAR_PP_APP_NAME",
-        facebook_app_env_var="ESTANDAR_PP_FACEBOOK_APP"
-    )
+    try:
+        result = await process_incoming_webhook_payload(
+            body=body,
+            app_name_env_var="ESTANDAR_PP_APP_NAME",
+            facebook_app_env_var="ESTANDAR_PP_FACEBOOK_APP"
+        )
+        logger.info(f"PP webhook processing result: {result}")
+        return result
+    except Exception as e:
+        logger.error(f"Unexpected error in PP webhook processing: {e}", exc_info=True)
+        # Return True to ACK to Facebook even on unexpected errors to prevent retries
+        return True
