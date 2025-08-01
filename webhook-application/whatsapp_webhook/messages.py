@@ -250,6 +250,54 @@ def _validate_webhook_config(app_name_env_var: str, facebook_app_env_var: str) -
     }
 
 
+async def _process_webhook_in_background(
+    body: dict, 
+    app_name_env_var: str, 
+    facebook_app_env_var: str
+) -> None:
+    """
+    Process webhook in background after ACK to Facebook.
+    Handles validation, parsing, and message processing.
+    
+    Args:
+        body: WhatsApp webhook payload
+        app_name_env_var: Environment variable name for app name
+        facebook_app_env_var: Environment variable name for Facebook app URL
+    """
+    logger = get_logger("background_webhook_processing")
+    logger.info("Starting background webhook processing")
+    
+    try:
+        # STEP 1: Validate configuration
+        config = _validate_webhook_config(app_name_env_var, facebook_app_env_var)
+        if not config:
+            logger.error("Failed to validate webhook configuration in background")
+            return
+
+        app_name = config["app_name"]
+        logger.info(f"Background processing webhook for app: {app_name}")
+
+        # STEP 2: Parse webhook payload using Pydantic model
+        webhook_payload = parse_webhook_payload(body)
+        if not webhook_payload:
+            logger.error(f"Failed to parse webhook payload for app {app_name} in background")
+            return
+
+        # STEP 3: Extract all messages using the domain model
+        all_messages = webhook_payload.get_all_messages()
+        
+        if not all_messages:
+            logger.info(f"No messages found in webhook payload for app {app_name}")
+            return
+
+        # STEP 4: Process messages
+        logger.info(f"Background processing {len(all_messages)} messages for app {app_name}")
+        await _process_messages_in_background(all_messages, config)
+        
+    except Exception as e:
+        logger.error(f"Unexpected error in background webhook processing: {e}", exc_info=True)
+
+
 async def _process_messages_in_background(
     all_messages: List[tuple],
     config: Dict[str, str]
@@ -313,7 +361,7 @@ async def _process_messages_in_background(
 async def process_incoming_webhook_payload(body: dict, app_name_env_var: str, facebook_app_env_var: str) -> bool:
     """
     Core logic to process incoming webhook events from WhatsApp.
-    ACKs immediately to Facebook, then processes messages in background.
+    ACKs immediately to Facebook first, then validates and processes messages in background.
     
     Args:
         body: WhatsApp webhook payload
@@ -321,41 +369,16 @@ async def process_incoming_webhook_payload(body: dict, app_name_env_var: str, fa
         facebook_app_env_var: Environment variable name for Facebook app URL
         
     Returns:
-        bool: True for immediate ACK to Facebook (HTTP 200)
+        bool: Always True for immediate ACK to Facebook (HTTP 200)
     """
-    # Validate configuration
-    config = _validate_webhook_config(app_name_env_var, facebook_app_env_var)
-    if not config:
-        logging.error("Failed to validate webhook configuration")
-        return False
-
-    app_name = config["app_name"]
-    logging.info(f"Processing incoming webhook for app: {app_name}")
-
-    # Parse webhook payload using Pydantic model
-    webhook_payload = parse_webhook_payload(body)
-    if not webhook_payload:
-        logging.error(f"Failed to parse webhook payload for app {app_name}")
-        # Even if parsing fails, return True to ACK to Facebook and prevent retries
-        return True
-
-    # Extract all messages using the domain model
-    all_messages = webhook_payload.get_all_messages()
-    
-    if not all_messages:
-        logging.info(f"No messages found in webhook payload for app {app_name}")
-        # No messages to process, but ACK to Facebook
-        return True
-
-    # CRITICAL: ACK to Facebook immediately by returning True
-    # Process messages in background task to avoid timeout
-    logging.info(f"Scheduling background processing for {len(all_messages)} messages")
+    # STEP 1: ALWAYS ACK TO FACEBOOK FIRST - No matter what happens
+    logging.info("Received webhook - sending immediate ACK to Facebook")
     
     # Start background processing without waiting for completion
-    asyncio.create_task(_process_messages_in_background(all_messages, config))
+    asyncio.create_task(_process_webhook_in_background(body, app_name_env_var, facebook_app_env_var))
     
-    # Return True immediately for Facebook ACK
-    logging.info(f"Webhook ACK sent immediately for app {app_name}")
+    # Return True immediately for Facebook ACK - CRITICAL for preventing retries
+    logging.info("Webhook ACK sent immediately to Facebook")
     return True
 
 
