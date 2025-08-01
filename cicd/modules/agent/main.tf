@@ -84,11 +84,11 @@ resource "google_cloud_run_v2_service" "cloud_run_name_agent_aa" {
       env {
         name  = "DATASTORE_CHILEPRUNES_CL_ID"
         value = var.datastore_chileprunes_cl_id
-        }
+      }
       env {
-        name  = "BIGQUERY_INTEGRATION_APPLICATION_CONNECTOR_ID"
-        value = var.bigquery_integration_application_connector_id
-        }
+        name  = "BIGQUERY_DATASET"
+        value = var.bigquery_dataset
+      }
     }
 
     service_account = google_service_account.agent_aa_app.email
