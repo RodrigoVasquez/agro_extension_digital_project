@@ -22,23 +22,6 @@ resource "google_project_iam_member" "agent_aa_sa_role_discovery" {
     member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
 }
 
-resource "google_project_iam_member" "agent_aa_connection_invoker" {   
-    project = var.project_id
-    role    = "roles/connectors.invoker"
-    member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
-}
-
-resource "google_project_iam_member" "agent_aa_connection_viewer" {   
-    project = var.project_id
-    role    = "roles/connectors.viewer"
-    member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
-}
-
-resource "google_project_iam_member" "agent_aa_integration_invoker" {   
-    project = var.project_id
-    role    = "roles/integrations.integrationInvoker"
-    member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
-}
 
 resource "google_cloud_run_v2_service" "cloud_run_name_agent_aa" {
   name     = var.cloud_run_name_agent_aa
@@ -48,6 +31,12 @@ resource "google_cloud_run_v2_service" "cloud_run_name_agent_aa" {
   template {
     containers {
       image = var.gar_image_location_agent_aa
+      
+      resources {
+        limits = {
+          memory = "1Gi"
+        }
+      }
 
       env {
         name  = "GOOGLE_GENAI_USE_VERTEXAI"
