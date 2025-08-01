@@ -22,6 +22,18 @@ resource "google_project_iam_member" "agent_aa_sa_role_discovery" {
     member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
 }
 
+resource "google_project_iam_member" "agent_aa_sa_role_bigquery" {   
+    project = var.project_id
+    role    = "roles/bigquery.dataViewer"
+    member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
+}
+
+resource "google_project_iam_member" "agent_aa_sa_role_bigquery_job" {   
+    project = var.project_id
+    role    = "roles/bigquery.jobUser"
+    member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
+}
+
 
 resource "google_cloud_run_v2_service" "cloud_run_name_agent_aa" {
   name     = var.cloud_run_name_agent_aa
