@@ -17,3 +17,7 @@ def agent_aa_rag_instruction():
 def agent_aa_rag_description():
     with open("agent_aa_app/prompts/agent_aa_rag/description.md") as f:
         return f.read()
+    
+def text2sql_instruction():
+    with open("agent_aa_app/prompts/text2sql/instruction.md") as f:
+        return f.read()
