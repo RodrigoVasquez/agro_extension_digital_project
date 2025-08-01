@@ -3,52 +3,280 @@
 Este es el repositorio principal de nuestro proyecto `agro_extension_digital_project`.
 Nuestra misión es revolucionar la extensión agrícola digital, conectando a agricultores y técnicos con información y herramientas de vanguardia. ¡Vamos a sembrar el futuro juntos! 🚀
 
-## ¿Qué encontrarás aquí dentro? 📂
+![Python](https://img.shields.io/badge/Python-3.12-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green)
+![Terraform](https://img.shields.io/badge/Terraform-1.5+-purple)
+![Google Cloud](https://img.shields.io/badge/Google%20Cloud-Platform-orange)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
-Este monorepo está organizado en varias carpetas clave. ¡Echa un vistazo!
+## 🏗️ Arquitectura del Proyecto
 
-*   **`agents/`** 🤖
-    *   Aquí viven nuestros agentes inteligentes. Son los cerebritos 🧠 que procesan información, interactúan con los usuarios y ayudan a tomar mejores decisiones en el campo.
+Este es un monorepo moderno que implementa una arquitectura de microservicios para la extensión agrícola digital, utilizando las mejores prácticas de desarrollo, CI/CD e infraestructura como código.
 
-*   **`cicd/`** ⚙️
-    *   ¡La magia de la Integración y Entrega Continua (CI/CD)! Contiene todos los scripts y configuraciones para automatizar las pruebas, despliegues y que todo funcione como un reloj suizo 🇨🇭.
+## 📂 Estructura del Proyecto
 
-*   **`notebooks/`** 🔬
-    *   ¡El laboratorio de los científicos de datos! Cuadernos de Jupyter listos para explorar, analizar, visualizar datos y prototipar nuevas ideas. ¡Pura experimentación!
+### **`agents/`** 🤖
+**Agentes Inteligentes de IA**
+- **Tecnologías:** Python 3.12, Google ADK, Pydantic v2
+- **Propósito:** Agentes conversacionales especializados en agricultura
+- **Componentes:**
+  - `agent_aa_app/`: Agente de Asistencia Agrícola
+  - `agent_pp_app/`: Agente de Planificación de Producción
+- **Arquitectura:** Modular con validación de datos y integración con servicios de Google Cloud
 
-*   **`webhook-application/`** 📲
-    *   El corazón de nuestras comunicaciones, especialmente con WhatsApp. Esta aplicación maneja los webhooks para recibir y enviar mensajes, conectando a los usuarios con nuestros servicios al instante.
+### **`webhook-application/`** 📲
+**Aplicación de Webhooks de WhatsApp (Completamente Refactorizada)**
+- **Tecnologías:** FastAPI, Pydantic v2, HTTPX, Google Cloud Auth
+- **Arquitectura:** Modular con separación clara de responsabilidades
+- **Características:**
+  - ✅ Validación de datos con Pydantic v2
+  - ✅ Arquitectura modular (api/, models/, utils/)
+  - ✅ Logging estructurado con niveles configurables
+  - ✅ Manejo robusto de errores
+  - ✅ Configuración centralizada
+  - ✅ Dependencias versionadas y restringidas
+- **Estructura:**
+  ```
+  whatsapp_webhook/
+  ├── api/           # Routers de FastAPI
+  ├── models/        # Modelos de dominio Pydantic v2
+  ├── utils/         # Utilidades y configuración
+  └── app.py         # Factory de aplicación FastAPI
+  ```
 
-## Entorno de Desarrollo con Dev Containers 🐳💻
+### **`cicd/`** ⚙️
+**Infraestructura como Código (IaC)**
+- **Tecnologías:** Terraform + Terragrunt
+- **Ambientes:** Desarrollo (NPE) y Producción (PRD)
+- **Características:**
+  - 🏗️ Modules reutilizables
+  - 🔧 Configuración específica por ambiente
+  - 📊 Estado remoto en Google Cloud Storage
+  - 🚀 Despliegue automatizado en Google Cloud Run
+  - 🔒 Gestión segura de secretos
 
-¡Para facilitarte la vida y asegurar que todos tengamos un ambiente de desarrollo consistente, este proyecto está configurado para usar **Dev Containers** (Contenedores de Desarrollo) en VS Code!
+### **`notebooks/`** 🔬
+**Laboratorio de Ciencia de Datos**
+- **Tecnologías:** Jupyter Notebooks, Python
+- **Propósito:** Exploración de datos, análisis y prototipado
+- **Áreas de investigación:**
+  - BigQuery analytics
+  - Text-to-SQL processing
+  - Agent behavior analysis
+  - Webhook data analysis
 
-**¿Qué es un Dev Container?** 🤔
+### **`actions-runner/`** 🏃‍♂️
+**Self-Hosted GitHub Actions Runner**
+- **Propósito:** Ejecutar CI/CD pipelines en infraestructura propia
+- **Configuración:** Automatizada para integración con Google Cloud
 
-Es básicamente un entorno de desarrollo Docker completamente configurado. Cuando abres este proyecto en VS Code y tienes la extensión de "Dev Containers" instalada, VS Code puede construir y conectarse a un contenedor Docker que tiene todas las herramientas y dependencias que necesitas ya preinstaladas y listas para usar. ¡Así te olvidas de los problemas de "en mi máquina sí funciona"! 😉
+## 🛠️ Stack Tecnológico
 
-**¿Qué incluye nuestro Dev Container?** 🧰
+### **Backend & APIs**
+- **Python 3.12** (versión fija para consistencia)
+- **FastAPI** (framework web moderno y rápido)
+- **Pydantic v2** (validación de datos y serialización)
+- **Uvicorn/Gunicorn** (servidores ASGI/WSGI)
 
-Este proyecto viene con un Dev Container basado en Ubuntu 22.04.5 LTS que incluye:
+### **Infraestructura & Despliegue**
+- **Google Cloud Platform** (plataforma principal)
+- **Google Cloud Run** (contenedores serverless)
+- **Terraform + Terragrunt** (infraestructura como código)
+- **Docker** (containerización)
+- **GitHub Actions** (CI/CD)
 
-*   🌲 **Git:** Una versión actualizada, lista para que gestiones tu código.
-*   🐳 **Docker CLI:** Para que puedas correr y gestionar otros contenedores Docker desde dentro del Dev Container.
-*   🏗️ **Terraform CLI:** Para gestionar tu infraestructura como código.
-    *   Opcionalmente, también puede incluir `TFLint` (para linting de Terraform) y `Terragrunt` (para mantener tu configuración de Terraform DRY).
-*   🐍 **Python:** Con las herramientas necesarias para los proyectos de Python aquí incluidos.
-*   🛠️ **Herramientas comunes de línea de comandos de Linux:** `curl`, `wget`, `zip`, `unzip`, `tar`, `grep`, `find`, etc.
+### **Desarrollo & Calidad**
+- **uv** (gestor de dependencias Python ultrarrápido)
+- **Dev Containers** (entornos de desarrollo consistentes)
+- **Structured Logging** (logging configurable por ambiente)
+- **Type Safety** (typing completo con Pydantic)
 
-**¿Cómo usarlo?** ✨
+## 🚀 Inicio Rápido
 
-1.  **Instala la extensión "Dev Containers"** en VS Code (si aún no la tienes). Su ID es `ms-vscode-remote.remote-containers`.
-2.  Abre este proyecto en VS Code.
-3.  VS Code debería detectar la configuración del Dev Container (`.devcontainer/devcontainer.json`) y preguntarte si quieres "Reabrir en Contenedor" ("Reopen in Container"). ¡Dale que sí!
-4.  VS Code construirá la imagen del contenedor (la primera vez puede tardar un poco) y luego se conectará a él.
-5.  ¡Listo! Ya estás trabajando dentro de un ambiente preconfigurado y aislado.
+### Prerrequisitos
+- Docker & VS Code con extensión Dev Containers
+- Cuenta de Google Cloud con permisos apropiados
+- Python 3.12 (si no usas Dev Containers)
 
-Esto asegura que todos los colaboradores tengan las mismas versiones de herramientas y un entorno de desarrollo idéntico, simplificando la incorporación y reduciendo problemas de configuración.
+### 1. Configuración del Entorno de Desarrollo
+```bash
+# Clona el repositorio
+git clone https://github.com/RodrigoVasquez/agro_extension_digital_project.git
+cd agro_extension_digital_project
 
-## ¡Manos a la Obra! 🛠️ Guía de Inicio Rápido
+# Abre en VS Code
+code .
+
+# VS Code detectará automáticamente el Dev Container
+# Selecciona "Reopen in Container" cuando aparezca la notificación
+```
+
+### 2. Desarrollo Local
+
+#### Webhook Application
+```bash
+cd webhook-application
+
+# Instalar dependencias con uv
+uv sync
+
+# Configurar variables de entorno
+cp .env.example .env
+# Edita .env con tus configuraciones
+
+# Ejecutar en modo desarrollo
+uv run python main.py
+```
+
+#### Agents
+```bash
+cd agents
+
+# Instalar dependencias
+uv sync
+
+# Ejecutar agente
+uv run python main.py
+```
+
+## 📋 Funcionalidades Principales
+
+### Webhook Application
+- ✅ **Procesamiento de Mensajes WhatsApp:** Recepción y respuesta automatizada
+- ✅ **Validación Robusta:** Pydantic v2 para validación de datos
+- ✅ **Arquitectura Modular:** Separación clara de responsabilidades
+- ✅ **Logging Estructurado:** Configuración por ambiente (DEBUG/INFO)
+- ✅ **Integración con Agentes:** Comunicación con servicios de IA
+- ✅ **Manejo de Errores:** Recuperación graceful y logging detallado
+
+### Intelligent Agents
+- 🤖 **Asistencia Agrícola:** Consejos especializados por cultivo
+- 📋 **Planificación de Producción:** Optimización de recursos
+- 🔗 **Integración Google Cloud:** Aprovecha servicios de IA/ML
+- 📊 **Analytics:** Procesamiento de datos agrícolas
+
+### Infrastructure
+- 🏗️ **Multi-ambiente:** Desarrollo y producción separados
+- 🔄 **CI/CD Automatizado:** Despliegue continuo con GitHub Actions
+- 📦 **Containerización:** Docker para todas las aplicaciones
+- 🔒 **Seguridad:** Gestión apropiada de secretos y permisos
+
+## 👥 Guía de Contribución y Desarrollo
+
+### Estándares de Código
+- **Python:** Sigue PEP 8 y usa type hints
+- **Pydantic v2:** Para toda validación de datos
+- **Logging:** Usa el sistema estructurado configurado
+- **Testing:** Escribe tests para nuevas funcionalidades
+- **Documentation:** Documenta funciones y clases importantes
+
+### Flujo de Trabajo Git
+```bash
+# Crear rama para nueva feature
+git checkout -b feature/nueva-funcionalidad
+
+# Hacer commits descriptivos
+git commit -m "feat: agregar validación de mensajes WhatsApp"
+
+# Push y crear Pull Request
+git push origin feature/nueva-funcionalidad
+```
+
+### Estructura de Commits
+- `feat:` Nueva funcionalidad
+- `fix:` Corrección de bugs
+- `docs:` Actualización de documentación
+- `refactor:` Refactorización de código
+- `test:` Agregado o modificación de tests
+- `ci:` Cambios en CI/CD
+
+### Testing
+```bash
+# Webhook Application
+cd webhook-application
+uv run pytest tests/
+
+# Agents
+cd agents
+uv run pytest tests/
+```
+
+## 🐳 Entorno de Desarrollo con Dev Containers
+
+Este proyecto está completamente configurado para usar **Dev Containers** en VS Code, proporcionando un entorno de desarrollo consistente, aislado y reproducible para todos los colaboradores.
+
+### ¿Por qué Dev Containers? 🤔
+
+- **Consistencia:** Mismo entorno para todos los desarrolladores
+- **Aislamiento:** No interfiere con tu configuración local
+- **Rapidez:** Configuración automática sin instalaciones manuales
+- **Productividad:** Extensiones y herramientas preconfiguradas
+
+### Características del Dev Container 🧰
+
+**Base:** Ubuntu 22.04.5 LTS
+
+**Herramientas Incluidas:**
+- 🌲 **Git:** Última versión con configuración optimizada
+- 🐳 **Docker CLI:** Para gestionar contenedores desde el contenedor
+- 🏗️ **Terraform + Terragrunt:** Completo stack de IaC
+- 🐍 **Python 3.12:** Con uv para gestión de dependencias
+- ☁️ **Google Cloud CLI:** Para interactuar con GCP
+- 🛠️ **Herramientas Linux:** curl, wget, jq, tree, htop, etc.
+
+**Extensiones VS Code Preinstaladas:**
+- Python y Pylance
+- Terraform
+- Docker
+- GitLens
+- Thunder Client (para testing de APIs)
+
+### Configuración Rápida ✨
+
+1. **Prerrequisitos:**
+   - VS Code instalado
+   - Docker Desktop ejecutándose
+   - Extensión "Dev Containers" (`ms-vscode-remote.remote-containers`)
+
+2. **Abrir el Proyecto:**
+   ```bash
+   git clone https://github.com/RodrigoVasquez/agro_extension_digital_project.git
+   cd agro_extension_digital_project
+   code .
+   ```
+
+3. **Iniciar Dev Container:**
+   - VS Code detectará automáticamente la configuración
+   - Click en "Reopen in Container" cuando aparezca la notificación
+   - O usa `Ctrl+Shift+P` → "Dev Containers: Reopen in Container"
+
+4. **Primera Construcción:**
+   - La primera vez tardará unos minutos en construir la imagen
+   - Construcciones posteriores serán mucho más rápidas (caché)
+
+### Comandos Útiles en el Dev Container 🚀
+
+```bash
+# Verificar herramientas instaladas
+python --version    # Python 3.12.x
+terraform --version # Terraform v1.x.x
+gcloud --version    # Google Cloud SDK
+
+# Gestión de dependencias con uv
+uv --version        # uv 0.x.x
+
+# Verificar Docker
+docker --version    # Docker version 24.x.x
+```
+
+### Tips de Productividad 💡
+
+- **Terminal Integrado:** Ya configurado con las herramientas necesarias
+- **Variables de Entorno:** Configuradas automáticamente para desarrollo
+- **Port Forwarding:** Automático para aplicaciones web (8000, 3000, etc.)
+- **Git Credentials:** Se mantienen desde tu sistema host
+
+## ⚙️ Guía Completa de Despliegue y Operaciones
 
 ### Configuración y Ejecución del Self-Hosted Runner de GitHub Actions 🏃💨
 
@@ -261,3 +489,187 @@ terragrunt run-all destroy # O terragrunt destroy
 **Siempre revisa el plan de destrucción cuidadosamente antes de confirmar.**
 
 ¡Y eso es todo! Con estos pasos deberías poder desplegar tu infraestructura usando Terragrunt. 🚀
+
+## 📊 Monitoreo y Observabilidad
+
+### Logging
+- **Niveles por Ambiente:**
+  - Development: `DEBUG` (logs detallados)
+  - Production: `INFO` (logs esenciales)
+- **Formato:** JSON estructurado para agregación
+- **Destino:** Google Cloud Logging
+
+### Métricas Clave
+- **Webhook Application:**
+  - Mensajes procesados por minuto
+  - Tiempo de respuesta promedio
+  - Errores de validación
+  - Integraciones con agentes exitosas
+
+- **Agents:**
+  - Consultas procesadas
+  - Tiempo de respuesta de IA
+  - Accuracy de respuestas
+
+### Health Checks
+```bash
+# Webhook Application
+curl http://localhost:8000/health
+
+# Response: {"status": "healthy", "timestamp": "2025-07-30T..."}
+```
+
+## 🔧 Troubleshooting
+
+### Problemas Comunes
+
+#### 1. Error de Autenticación con Google Cloud
+```bash
+# Reautenticar
+gcloud auth login
+gcloud auth application-default login
+
+# Verificar proyecto activo
+gcloud config get-value project
+```
+
+#### 2. Problemas con Dependencies
+```bash
+# Limpiar cache de uv
+uv cache clean
+
+# Reinstalar dependencias
+rm uv.lock
+uv sync
+```
+
+#### 3. Webhook No Recibe Mensajes
+- Verificar que la URL del webhook esté correctamente configurada en WhatsApp
+- Revisar logs para errores de validación
+- Confirmar que los tokens de verificación coincidan
+
+#### 4. Terraform State Lock
+```bash
+# Si el estado está bloqueado
+cd cicd/dev
+terragrunt force-unlock LOCK_ID
+```
+
+### Logs de Debug
+```bash
+# Ver logs de aplicación
+cd webhook-application
+uv run python main.py --log-level DEBUG
+
+# Ver logs del runner
+tail -f actions-runner/nohup.out
+
+# Logs de Terraform
+cd cicd/dev
+terragrunt apply -var="log_level=DEBUG"
+```
+
+## 📚 API Documentation
+
+### Webhook Endpoints
+
+#### Verificación de Webhook
+```http
+GET /webhook/aa
+GET /webhook/pp
+
+Query Parameters:
+- hub.mode=subscribe
+- hub.challenge=<challenge_token>
+- hub.verify_token=<verify_token>
+```
+
+#### Recepción de Mensajes
+```http
+POST /webhook/aa
+POST /webhook/pp
+
+Content-Type: application/json
+
+Body: WhatsApp webhook payload
+```
+
+#### Health Check
+```http
+GET /health
+
+Response:
+{
+  "status": "healthy",
+  "timestamp": "2025-07-30T12:00:00Z",
+  "version": "0.1.0"
+}
+```
+
+### Modelos de Datos (Pydantic v2)
+
+#### WhatsAppWebhookPayload
+```python
+{
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "string",
+      "changes": [
+        {
+          "value": {
+            "messaging_product": "whatsapp",
+            "messages": [
+              {
+                "from": "phone_number",
+                "text": {"body": "message_content"},
+                "type": "text"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+## 🤝 Contribuir al Proyecto
+
+### Reportar Issues
+1. Usar templates de GitHub Issues
+2. Incluir logs relevantes
+3. Describir pasos para reproducir
+4. Especificar ambiente (dev/prod)
+
+### Pull Requests
+1. Fork del repositorio
+2. Crear rama descriptiva
+3. Escribir tests para cambios
+4. Seguir convenciones de commits
+5. Actualizar documentación si es necesario
+
+### Code Review
+- Al menos una aprobación requerida
+- Tests deben pasar
+- Coverage mínimo del 80%
+- Documentación actualizada
+
+## 📞 Soporte
+
+### Contacto del Equipo
+- **Tech Lead:** @RodrigoVasquez
+- **DevOps:** GitHub Issues
+- **Documentación:** Wiki del proyecto
+
+### Recursos Adicionales
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [Pydantic v2 Guide](https://docs.pydantic.dev/latest/)
+- [Terragrunt Documentation](https://terragrunt.gruntwork.io/)
+- [Google Cloud Run Docs](https://cloud.google.com/run/docs)
+
+---
+
+📝 **Última actualización:** Julio 2025  
+🚀 **Versión:** 2.0.0  
+👥 **Colaboradores:** Ver [Contributors](https://github.com/RodrigoVasquez/agro_extension_digital_project/graphs/contributors)

@@ -145,3 +145,9 @@ variable "wsp_token" {
     description = "Token de WhatsApp"
     type        = string
 }
+
+variable "log_level" {
+    description = "Nivel de logging para la aplicación webhook (DEBUG, INFO, WARNING, ERROR, CRITICAL)"
+    type        = string
+    default     = "INFO"
+}

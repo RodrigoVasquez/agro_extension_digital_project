@@ -1,123 +1,233 @@
+import asyncio
 import requests
 import os
 import json
 import re # Not strictly needed for the new send_message but kept for now
 import logging
-from .utils import idtoken_from_metadata_server # Relative import
+from typing import Optional, Dict, Any, List, TYPE_CHECKING
+
+from .auth.google_auth import idtoken_from_metadata_server # Updated import
 from .sessions import create_session # Relative import
+from .utils.logging import get_logger # New import
+from .utils.helpers import sanitize_user_id # New import
+from .utils.config import get_agent_app_name # Import for app name mapping
+from .utils.model_utils import (  # New import for domain models
+    parse_webhook_payload,
+    parse_agent_response,
+    create_outgoing_text_message,
+    create_processing_context,
+    create_agent_request
+)
+from .models.messages import WhatsAppWebhookPayload, AgentRequestPayload  # Domain models
+
+if TYPE_CHECKING:
+    from .models.messages import WhatsAppMessage
 
 APP_URL = os.getenv("APP_URL")
 
-def send_message(user: str, app_name: str, session_id: str, message: str):
+def send_message(user: str, app_name: str, session_id: str, message: str) -> str:
     """
     Sends a message to the internal agent service and parses the response.
-    The agent service is expected to return a JSON array, where the last element
-    contains the text response.
+    
+    Args:
+        user: User identifier
+        app_name: Application name 
+        session_id: Session identifier
+        message: Message text to send
+        
+    Returns:
+        Agent response text or error message
     """
+    logger = get_logger("agent_communication", {"app_name": app_name})
+    
+    # Mapear nombre de app a nombre esperado por el agente
+    agent_app_name = get_agent_app_name(app_name)
+    
     if not APP_URL:
-        logging.error("APP_URL environment variable is not set. Cannot send message to agent.")
+        logger.error("APP_URL environment variable is not set")
         return "Error: Servicio de agente no configurado (URL)."
 
+    # Get authentication token
     try:
-        logging.info(f"Fetching ID token for {APP_URL} to send message for app {app_name}, user {user}")
+        logger.info("Fetching ID token for agent service", extra={"user_id": user})
         id_token = idtoken_from_metadata_server(APP_URL)
-        logging.info(f"ID token fetched successfully for app {app_name}, user {user}.")
+        logger.info("ID token fetched successfully", extra={"user_id": user})
     except Exception as e:
-        logging.exception(f"Error generating ID token for {APP_URL} (app {app_name}, user {user}): {e}")
+        logger.error(f"Error generating ID token: {e}", extra={"user_id": user}, exc_info=True)
         return "Error: No se pudo autenticar con el servicio del agente. Por favor contacte al administrador."
 
-    session_url = f"{APP_URL}/run" # Corrected endpoint
+    # Create agent request using Pydantic model
+    try:
+        agent_request = create_agent_request(
+            app_name=agent_app_name,  # Usar el nombre mapeado
+            user_id=user,
+            session_id=session_id,
+            message_text=message,
+            streaming=False
+        )
+        payload_dict = agent_request.model_dump()
+    except Exception as e:
+        logger.error(f"Error creating agent request payload: {e}", extra={"user_id": user}, exc_info=True)
+        return "Error: No se pudo crear la solicitud para el agente."
 
+    # Send request to agent service
+    session_url = f"{APP_URL}/run"
     headers = {
         "Authorization": f"Bearer {id_token}",
         "Content-Type": "application/json"
     }
-    payload = {
-        "app_name": app_name,
-        "user_id": user,
-        "session_id": session_id,
-        "new_message": {
-            "role": "user",
-            "parts": [{"text": message}]
-        },
-        "streaming": False,
-    }
 
-    logging.info(f"Sending message to agent for app {app_name}, user {user}. Payload: {json.dumps(payload)}")
+    logger.log_agent_message_request(user, app_name, agent_app_name, session_url)
+    logger.log_agent_request(user, app_name, payload_dict)
+    
     try:
-        response = requests.post(session_url, headers=headers, json=payload)
+        response = requests.post(session_url, headers=headers, json=payload_dict)
         response.raise_for_status()
         
-        logging.debug(f"Raw response from agent for app {app_name}, user {user}: {response.text}")
+        logger.debug("Raw response from agent", extra={"user_id": user, "response_size": len(response.text)})
         response_data = response.json()
 
-        if isinstance(response_data, list) and response_data:
-            last_event = response_data[-1]
-            content = last_event.get("content")
-            if content:
-                parts = content.get("parts")
-                if isinstance(parts, list) and parts:
-                    first_part = parts[0]
-                    if isinstance(first_part, dict) and "text" in first_part:
-                        final_text = first_part["text"]
-                        logging.info(f"Successfully extracted text for app {app_name}, user {user}: {final_text}")
-                        return final_text.strip()
-            
-            logging.warning(f"Could not find \'text\' in the expected structure of the last event for app {app_name}, user {user}: {last_event}")
-            return "Error: No se pudo extraer el texto de la respuesta del agente."
+        # Parse agent response using utility function
+        extracted_text = parse_agent_response(response_data)
+        if extracted_text:
+            logger.info("Successfully extracted text from agent response", extra={"user_id": user})
+            return extracted_text
         else:
-            logging.warning(f"Response data is not a list or is empty for app {app_name}, user {user}: {response.text}")
-            return "Error: Formato de respuesta inesperado del agente."
+            logger.warning("Could not extract text from agent response", extra={"user_id": user})
+            return "Error: No se pudo extraer el texto de la respuesta del agente."
             
-    except json.JSONDecodeError:
-        logging.exception(f"Failed to decode JSON response from agent for app {app_name}, user {user}: {response.text}")
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to decode JSON response from agent: {e}", extra={"user_id": user}, exc_info=True)
         return "Error: La respuesta del agente no es un JSON válido."
     except requests.exceptions.RequestException as e:
-        logging.exception(f"Request to agent failed for app {app_name}, user {user}: {e}")
+        logger.error(f"Request to agent failed: {e}", extra={"user_id": user}, exc_info=True)
         return "Error: Fallo la comunicación con el servicio del agente."
     except Exception as e:
-        logging.exception(f"An unexpected error occurred while parsing agent response for app {app_name}, user {user}: {e}")
+        logger.error(f"Unexpected error while parsing agent response: {e}", extra={"user_id": user}, exc_info=True)
         return "Error: Error inesperado al procesar la respuesta del agente."
 
-async def _process_single_text_message(user_wa_id: str, message_text: str, app_name: str, whatsapp_api_url: str, wsp_token: str):
+async def _send_whatsapp_acknowledgment(
+    user_wa_id: str,
+    message_text: str,
+    app_name: str,
+    whatsapp_api_url: str,
+    wsp_token: str,
+    message_context: str = "message"
+) -> bool:
     """
-    Processes a single text message: creates a session, gets a response from the internal service,
-    and sends it back to the user via WhatsApp API.
+    Send acknowledgment message to WhatsApp user.
+    
+    Args:
+        user_wa_id: WhatsApp user ID
+        message_text: Text to send
+        app_name: Application name
+        whatsapp_api_url: WhatsApp API endpoint URL
+        wsp_token: WhatsApp API token
+        message_context: Context for logging (e.g., "text message", "error")
+        
+    Returns:
+        True if sent successfully, False otherwise
     """
-    logging.info(f"Processing text message from user {user_wa_id} for app {app_name}: '{message_text}'")
+    logger = get_logger("whatsapp_ack", {"app_name": app_name})
     
-    create_session(user_wa_id, app_name, user_wa_id) # session_id is user_wa_id
-    
-    response_from_service = send_message(user_wa_id, app_name, user_wa_id, message_text)
-    
-    whatsapp_payload = {
-        "messaging_product": "whatsapp",
-        "recipient_type": "individual",
-        "to": user_wa_id,
-        "type": "text",
-        "text": {
-            "body": response_from_service
-        }
-    }
-    headers = {
-        "Authorization": f"Bearer {wsp_token}",
-        "Content-Type": "application/json"
-    }
-    
-    logging.info(f"Sending response to WhatsApp for user {user_wa_id}, app {app_name}. Payload: {json.dumps(whatsapp_payload)}")
     try:
-        resp = requests.post(whatsapp_api_url, headers=headers, data=json.dumps(whatsapp_payload))
-        logging.info(f"Response from WhatsApp API for user {user_wa_id}, app {app_name}: Status {resp.status_code} - Text: {resp.text}")
+        # Create outgoing message
+        outgoing_message = create_outgoing_text_message(user_wa_id, message_text)
+        whatsapp_payload = outgoing_message.model_dump()
+        
+        headers = {
+            "Authorization": f"Bearer {wsp_token}",
+            "Content-Type": "application/json"
+        }
+        
+        logger.info(f"Sending acknowledgment for {message_context}", extra={"user_id": user_wa_id})
+        
+        # Send to WhatsApp API
+        whatsapp_url = f"{whatsapp_api_url}"
+        resp = requests.post(whatsapp_url, headers=headers, json=whatsapp_payload)
+        
+        # Log response
+        response_json = None
+        if resp.headers.get('content-type', '').startswith('application/json'):
+            try:
+                response_json = resp.json()
+            except json.JSONDecodeError:
+                pass
+                
+        logger.log_whatsapp_response(user_wa_id, app_name, resp.status_code, response_json)
         resp.raise_for_status()
-    except requests.exceptions.RequestException:
-        logging.exception(f"Error posting to WhatsApp API for user {user_wa_id}, app {app_name}")
-    except Exception:
-        logging.exception(f"Unexpected error sending message to WhatsApp API for user {user_wa_id}, app {app_name}")
+        
+        logger.info(f"Acknowledgment sent successfully for {message_context}", extra={"user_id": user_wa_id})
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to send acknowledgment for {message_context}: {e}", 
+                    extra={"user_id": user_wa_id}, exc_info=True)
+        return False
 
-async def process_incoming_webhook_payload(body: dict, app_name_env_var: str, facebook_app_env_var: str):
+async def _process_single_text_message(
+    sender_wa_id: str,
+    message: "WhatsAppMessage",
+    app_name: str,
+    whatsapp_api_url: str,
+    wsp_token: str
+) -> None:
     """
-    Core logic to process incoming webhook events from WhatsApp.
-    Iterates through messages and calls _process_single_text_message for text messages.
+    Process a single text message from WhatsApp.
+    Processes with agent and responds (no visible ACK to user).
+    """
+    logger = get_logger("message_processing", {"app_name": app_name})
+    
+    # Process and respond directly (no visible ACK to user)
+    try:
+        create_session(sender_wa_id, app_name, sender_wa_id)
+        
+        # Get message text from the message object
+        message_text = message.get_message_content()
+        if not message_text:
+            raise ValueError("No message content found")
+        
+        # Process with agent using send_message function
+        agent_response = send_message(
+            user=sender_wa_id,
+            app_name=app_name,
+            session_id=sender_wa_id,
+            message=message_text
+        )
+        
+        # Send agent response or fallback (this is the only visible message)
+        response_text = agent_response or "No pude procesar tu mensaje. Intenta de nuevo."
+        
+        await _send_whatsapp_acknowledgment(
+            user_wa_id=sender_wa_id,
+            message_text=response_text,
+            app_name=app_name,
+            whatsapp_api_url=whatsapp_api_url,
+            wsp_token=wsp_token,
+            message_context="response"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error processing message: {e}", extra={"user_id": sender_wa_id})
+        
+        await _send_whatsapp_acknowledgment(
+            user_wa_id=sender_wa_id,
+            message_text="Error procesando mensaje. Intenta más tarde.",
+            app_name=app_name,
+            whatsapp_api_url=whatsapp_api_url,
+            wsp_token=wsp_token,
+            message_context="error"
+        )
+def _validate_webhook_config(app_name_env_var: str, facebook_app_env_var: str) -> Optional[Dict[str, str]]:
+    """
+    Validate required environment variables for webhook processing.
+    
+    Args:
+        app_name_env_var: Environment variable name for app name
+        facebook_app_env_var: Environment variable name for Facebook app URL
+        
+    Returns:
+        Dictionary with configuration values or None if validation fails
     """
     app_name = os.getenv(app_name_env_var)
     whatsapp_api_url = os.getenv(facebook_app_env_var)
@@ -125,70 +235,226 @@ async def process_incoming_webhook_payload(body: dict, app_name_env_var: str, fa
 
     if not app_name:
         logging.error(f"Environment variable {app_name_env_var} not set. Cannot process webhook.")
-        return
+        return None
     if not whatsapp_api_url:
         logging.error(f"Environment variable {facebook_app_env_var} not set. Cannot process webhook.")
-        return
+        return None
     if not wsp_token:
         logging.error("Environment variable WSP_TOKEN not set. Cannot process webhook.")
-        return
+        return None
 
-    logging.info(f"Processing incoming webhook for app: {app_name} using URL: {whatsapp_api_url}")
+    return {
+        "app_name": app_name,
+        "whatsapp_api_url": whatsapp_api_url,
+        "wsp_token": wsp_token
+    }
 
-    if 'entry' in body and body['entry']:
-        for entry in body['entry']:
-            entry_id = entry.get('id', 'N/A')
-            logging.debug(f"Processing entry ID: {entry_id} for app {app_name}")
-            if 'changes' in entry and entry['changes']:
-                for change in entry['changes']:
-                    field = change.get('field', 'N/A')
-                    logging.debug(f"Processing change field: {field} in entry {entry_id} for app {app_name}")
-                    if field == 'messages':
-                        value = change.get('value', {})
-                        
-                        user_wa_id = None
-                        if 'contacts' in value and isinstance(value['contacts'], list) and value['contacts']:
-                            user_wa_id = value['contacts'][0].get('wa_id')
 
-                        if not user_wa_id:
-                            logging.warning(f"No wa_id found in contacts for change value in entry {entry_id}, app {app_name}. Value: {value}")
-                            continue
+async def _process_webhook_in_background(
+    body: dict, 
+    app_name_env_var: str, 
+    facebook_app_env_var: str
+) -> None:
+    """
+    Process webhook in background after ACK to Facebook.
+    Handles validation, parsing, and message processing.
+    
+    Args:
+        body: WhatsApp webhook payload
+        app_name_env_var: Environment variable name for app name
+        facebook_app_env_var: Environment variable name for Facebook app URL
+    """
+    logger = get_logger("background_webhook_processing")
+    logger.info("Starting background webhook processing")
+    
+    try:
+        # STEP 1: Validate configuration
+        config = _validate_webhook_config(app_name_env_var, facebook_app_env_var)
+        if not config:
+            logger.error("Failed to validate webhook configuration in background")
+            return
 
-                        if 'messages' in value and isinstance(value['messages'], list):
-                            for message_obj in value['messages']:
-                                message_id = message_obj.get('id', 'N/A')
-                                if message_obj.get('type') == 'text':
-                                    message_text_data = message_obj.get('text', {})
-                                    message_text = message_text_data.get('body')
+        app_name = config["app_name"]
+        logger.info(f"Background processing webhook for app: {app_name}")
 
-                                    if not message_text:
-                                        logging.warning(f"No text body in message_obj (ID: {message_id}) for user {user_wa_id}, app {app_name}. Message: {message_obj}")
-                                        continue
-                                    
-                                    await _process_single_text_message(user_wa_id, message_text, app_name, whatsapp_api_url, wsp_token)
-                                else:
-                                    logging.info(f"Skipping non-text message (ID: {message_id}, Type: {message_obj.get('type')}) for user {user_wa_id}, app {app_name}.")
-                        else:
-                            logging.warning(f"No 'messages' array in 'value' or not a list for user {user_wa_id}, app {app_name}, entry {entry_id}. Value: {value}")
+        # STEP 2: Parse webhook payload using Pydantic model
+        webhook_payload = parse_webhook_payload(body)
+        if not webhook_payload:
+            logger.error(f"Failed to parse webhook payload for app {app_name} in background")
+            return
+
+        # STEP 3: Extract all messages using the domain model
+        all_messages = webhook_payload.get_all_messages()
+        
+        if not all_messages:
+            logger.info(f"No messages found in webhook payload for app {app_name}")
+            return
+
+        # STEP 4: Process messages
+        logger.info(f"Background processing {len(all_messages)} messages for app {app_name}")
+        await _process_messages_in_background(all_messages, config)
+        
+    except Exception as e:
+        logger.error(f"Unexpected error in background webhook processing: {e}", exc_info=True)
+
+
+async def _process_messages_in_background(
+    all_messages: List[tuple],
+    config: Dict[str, str]
+) -> None:
+    """
+    Process messages in background after ACK to Facebook.
+    
+    Args:
+        all_messages: List of (sender_wa_id, message) tuples
+        config: Validated configuration dictionary
+    """
+    app_name = config["app_name"]
+    logger = get_logger("background_processing", {"app_name": app_name})
+    
+    logger.info(f"Starting background processing of {len(all_messages)} messages for app {app_name}")
+    
+    # Process each message based on its type
+    for sender_wa_id, message in all_messages:
+        message_id = message.id
+        message_type = message.type
+        
+        logger.info(f"Background processing {message_type} message (ID: {message_id}) from user {sender_wa_id}")
+        
+        try:
+            if message.is_text_message():
+                # Process text messages with the agent
+                await _process_single_text_message(
+                    sender_wa_id=sender_wa_id,
+                    message=message,
+                    app_name=app_name,
+                    whatsapp_api_url=config["whatsapp_api_url"],
+                    wsp_token=config["wsp_token"]
+                )
             else:
-                logging.debug(f"No 'changes' in entry {entry_id} for app {app_name}.")
-    else:
-        logging.info(f"No 'entry' in body or body['entry'] is empty for app {app_name}. Body: {body}")
+                # Handle non-text messages
+                await _process_non_text_message(
+                    sender_wa_id=sender_wa_id,
+                    message=message,
+                    app_name=app_name,
+                    whatsapp_api_url=config["whatsapp_api_url"],
+                    wsp_token=config["wsp_token"]
+                )
+        except Exception as e:
+            logger.error(f"Error in background processing message {message_id} from {sender_wa_id}: {e}", exc_info=True)
+            # Send acknowledgment even if processing fails
+            try:
+                await _send_whatsapp_acknowledgment(
+                    user_wa_id=sender_wa_id,
+                    message_text="Disculpa, hubo un error procesando tu mensaje. Por favor intenta de nuevo.",
+                    app_name=app_name,
+                    whatsapp_api_url=config["whatsapp_api_url"],
+                    wsp_token=config["wsp_token"],
+                    message_context="error recovery"
+                )
+            except Exception as ack_error:
+                logger.error(f"Failed to send error acknowledgment to {sender_wa_id}: {ack_error}", exc_info=True)
+    
+    logger.info(f"Background processing completed for app {app_name}")
 
-async def receive_message_aa(body: dict):
-    """Handles messages for Estandar AA"""
-    logging.info("receive_message_aa invoked")
-    await process_incoming_webhook_payload(
-        body,
-        app_name_env_var="ESTANDAR_AA_APP_NAME",
-        facebook_app_env_var="ESTANDAR_AA_FACEBOOK_APP"
+
+async def process_incoming_webhook_payload(body: dict, app_name_env_var: str, facebook_app_env_var: str) -> bool:
+    """
+    Core logic to process incoming webhook events from WhatsApp.
+    ACKs immediately to Facebook first, then validates and processes messages in background.
+    
+    Args:
+        body: WhatsApp webhook payload
+        app_name_env_var: Environment variable name for app name
+        facebook_app_env_var: Environment variable name for Facebook app URL
+        
+    Returns:
+        bool: Always True for immediate ACK to Facebook (HTTP 200)
+    """
+    # STEP 1: ALWAYS ACK TO FACEBOOK FIRST - No matter what happens
+    logging.info("Received webhook - sending immediate ACK to Facebook")
+    
+    # Start background processing without waiting for completion
+    asyncio.create_task(_process_webhook_in_background(body, app_name_env_var, facebook_app_env_var))
+    
+    # Return True immediately for Facebook ACK - CRITICAL for preventing retries
+    logging.info("Webhook ACK sent immediately to Facebook")
+    return True
+
+
+async def _process_non_text_message(
+    sender_wa_id: str,
+    message: "WhatsAppMessage",
+    app_name: str,
+    whatsapp_api_url: str,
+    wsp_token: str
+) -> None:
+    """
+    Process non-text messages from WhatsApp.
+    Sends info message about text-only support (no visible ACK to user).
+    """
+    logger = get_logger("message_processing", {"app_name": app_name})
+    
+    # Send info message directly (no visible ACK to user)
+    await _send_whatsapp_acknowledgment(
+        user_wa_id=sender_wa_id,
+        message_text="Solo puedo procesar mensajes de texto. ¿En qué puedo ayudarte?",
+        app_name=app_name,
+        whatsapp_api_url=whatsapp_api_url,
+        wsp_token=wsp_token,
+        message_context="info"
     )
 
-async def receive_message_pp(body: dict):
-    """Handles messages for Estandar PP"""
-    logging.info("receive_message_pp invoked")
-    await process_incoming_webhook_payload(
-        body,
-        app_name_env_var="ESTANDAR_PP_APP_NAME",
-        facebook_app_env_var="ESTANDAR_PP_FACEBOOK_APP"
-    )
+
+async def receive_message_aa(body: dict) -> bool:
+    """
+    Handles incoming messages for Estandar AA application.
+    
+    Args:
+        body: WhatsApp webhook payload dictionary
+        
+    Returns:
+        bool: True for HTTP 200 ACK to Facebook, False for HTTP 500
+    """
+    logger = get_logger("webhook_aa")
+    logger.info("Processing AA webhook request")
+    
+    try:
+        result = await process_incoming_webhook_payload(
+            body=body,
+            app_name_env_var="ESTANDAR_AA_APP_NAME",
+            facebook_app_env_var="ESTANDAR_AA_FACEBOOK_APP"
+        )
+        logger.info(f"AA webhook processing result: {result}")
+        return result
+    except Exception as e:
+        logger.error(f"Unexpected error in AA webhook processing: {e}", exc_info=True)
+        # Return True to ACK to Facebook even on unexpected errors to prevent retries
+        return True
+
+
+async def receive_message_pp(body: dict) -> bool:
+    """
+    Handles incoming messages for Estandar PP application.
+    
+    Args:
+        body: WhatsApp webhook payload dictionary
+        
+    Returns:
+        bool: True for HTTP 200 ACK to Facebook, False for HTTP 500
+    """
+    logger = get_logger("webhook_pp")
+    logger.info("Processing PP webhook request")
+    
+    try:
+        result = await process_incoming_webhook_payload(
+            body=body,
+            app_name_env_var="ESTANDAR_PP_APP_NAME",
+            facebook_app_env_var="ESTANDAR_PP_FACEBOOK_APP"
+        )
+        logger.info(f"PP webhook processing result: {result}")
+        return result
+    except Exception as e:
+        logger.error(f"Unexpected error in PP webhook processing: {e}", exc_info=True)
+        # Return True to ACK to Facebook even on unexpected errors to prevent retries
+        return True
