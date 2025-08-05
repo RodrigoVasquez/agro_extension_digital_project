@@ -391,19 +391,25 @@ async def _process_non_text_message(
 ) -> None:
     """
     Process non-text messages from WhatsApp.
-    Sends info message about text-only support (no visible ACK to user).
+    Handles audio messages or sends info about text-only support.
     """
     logger = get_logger("message_processing", {"app_name": app_name})
     
-    # Send info message directly (no visible ACK to user)
-    await _send_whatsapp_acknowledgment(
-        user_wa_id=sender_wa_id,
-        message_text="Solo puedo procesar mensajes de texto. ¿En qué puedo ayudarte?",
-        app_name=app_name,
-        whatsapp_api_url=whatsapp_api_url,
-        wsp_token=wsp_token,
-        message_context="info"
-    )
+    if message.type == "audio" and hasattr(message, 'audio') and message.audio:
+        # Procesar mensaje de audio
+        session_id = sender_wa_id  # Usar sender_wa_id como session_id
+        create_session(sender_wa_id, app_name, session_id)
+        await handle_audio_message(sender_wa_id, message.audio.id, app_name, session_id)
+    else:
+        # Send info message for other non-text types
+        await _send_whatsapp_acknowledgment(
+            user_wa_id=sender_wa_id,
+            message_text="Solo puedo procesar mensajes de texto y audio. ¿En qué puedo ayudarte?",
+            app_name=app_name,
+            whatsapp_api_url=whatsapp_api_url,
+            wsp_token=wsp_token,
+            message_context="info"
+        )
 
 
 async def receive_message_aa(body: dict) -> bool:
@@ -458,3 +464,33 @@ async def receive_message_pp(body: dict) -> bool:
         logger.error(f"Unexpected error in PP webhook processing: {e}", exc_info=True)
         # Return True to ACK to Facebook even on unexpected errors to prevent retries
         return True
+
+
+async def handle_audio_message(phone: str, audio_id: str, app_name: str, session_id: str) -> None:
+    """Procesa mensaje de audio: descarga, transcribe y responde."""
+    from .external_services.whatsapp_client import download_media, send_whatsapp_message, create_text_message
+    from .transcription import transcribe_audio_file
+    from .utils.config import get_whatsapp_config
+    
+    config = get_whatsapp_config(app_name)
+    
+    try:
+        # Descargar audio
+        audio_content = await download_media(audio_id, config["api_url"], config["token"])
+        if not audio_content:
+            await send_whatsapp_message(phone, create_text_message("No pude descargar tu audio."), config["api_url"], config["token"])
+            return
+        
+        # Transcribir
+        transcript = await transcribe_audio_file(audio_content)
+        if not transcript:
+            await send_whatsapp_message(phone, create_text_message("No pude entender tu audio."), config["api_url"], config["token"])
+            return
+        
+        # Procesar con agente
+        response = send_message(phone, app_name, session_id, transcript)
+        await send_whatsapp_message(phone, create_text_message(response), config["api_url"], config["token"])
+        
+    except Exception as e:
+        logging.error(f"Error procesando audio: {e}")
+        await send_whatsapp_message(phone, create_text_message("Error procesando tu audio."), config["api_url"], config["token"])

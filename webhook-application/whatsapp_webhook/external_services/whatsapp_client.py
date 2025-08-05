@@ -173,3 +173,23 @@ def create_document_message(media_id: str, filename: str, caption: Optional[str]
         message["document"]["caption"] = caption
         
     return message
+
+
+async def download_media(media_id: str, whatsapp_api_url: str, token: str) -> Optional[bytes]:
+    """Descarga media de WhatsApp."""
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        async with httpx.AsyncClient() as client:
+            # Obtener URL del media
+            resp = await client.get(f"{whatsapp_api_url}/{media_id}", headers=headers)
+            resp.raise_for_status()
+            file_url = resp.json().get("url")
+            
+            if file_url:
+                # Descargar contenido
+                content_resp = await client.get(file_url, headers=headers)
+                content_resp.raise_for_status()
+                return content_resp.content
+    except Exception as e:
+        logging.error(f"Error descargando media {media_id}: {e}")
+    return None

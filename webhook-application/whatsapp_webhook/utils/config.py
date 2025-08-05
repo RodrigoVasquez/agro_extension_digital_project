@@ -138,3 +138,19 @@ def validate_environment_config(app_name: str) -> list[str]:
             missing_vars.append(var)
     
     return missing_vars
+
+
+def get_whatsapp_config(app_name: str) -> dict:
+    """
+    Obtiene configuración completa de WhatsApp para una app.
+    
+    Args:
+        app_name: Nombre de la aplicación
+        
+    Returns:
+        dict: Configuración con api_url y token
+    """
+    return {
+        "api_url": get_whatsapp_api_url(app_name),
+        "token": get_whatsapp_token(app_name)
+    }
