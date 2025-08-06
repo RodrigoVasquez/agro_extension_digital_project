@@ -475,7 +475,7 @@ async def handle_audio_message(phone: str, audio_id: str, app_name: str, session
     config = get_whatsapp_config(app_name)
     
     try:
-        # Descargar audio
+        # Descargar audio usando la URL base - download_media construirá /{audio_id}
         audio_content = await download_media(audio_id, config["api_url"], config["token"])
         if not audio_content:
             await send_whatsapp_message(phone, create_text_message("No pude descargar tu audio."), config["api_url"], config["token"])

@@ -19,7 +19,7 @@ def get_whatsapp_api_url(app_name: str) -> str:
     
     app_upper = app_name.upper()
     
-    # Intentar obtener la URL específica desde variables de entorno
+    # Obtener la URL específica desde variables de entorno
     if app_upper == "AA":
         url = os.getenv("ESTANDAR_AA_FACEBOOK_APP")
         env_var = "ESTANDAR_AA_FACEBOOK_APP"
@@ -27,9 +27,8 @@ def get_whatsapp_api_url(app_name: str) -> str:
         url = os.getenv("ESTANDAR_PP_FACEBOOK_APP")
         env_var = "ESTANDAR_PP_FACEBOOK_APP"
     else:
-        # Intentar variables de entorno alternativas para otros casos
-        url = os.getenv("WHATSAPP_API_URL_DEFAULT") or os.getenv("WHATSAPP_API_URL")
-        env_var = "WHATSAPP_API_URL_DEFAULT or WHATSAPP_API_URL"
+        logging.error(f"Aplicación no soportada: {app_name}. Solo se soportan 'AA' y 'PP'.")
+        return ""
 
     if not url:
         logging.error(f"No se encontró configuración de URL para app {app_name}. Variable de entorno {env_var} no está configurada.")
