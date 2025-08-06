@@ -181,15 +181,25 @@ async def download_media(media_id: str, whatsapp_api_url: str, token: str) -> Op
         headers = {"Authorization": f"Bearer {token}"}
         async with httpx.AsyncClient() as client:
             # Obtener URL del media
-            resp = await client.get(f"{whatsapp_api_url}/{media_id}", headers=headers)
+            media_info_url = f"{whatsapp_api_url}/{media_id}"
+            logging.info(f"Obteniendo información de media desde: {media_info_url}")
+            
+            resp = await client.get(media_info_url, headers=headers)
             resp.raise_for_status()
             file_url = resp.json().get("url")
             
             if file_url:
+                logging.info(f"Descargando archivo de audio desde URL: {file_url}")
                 # Descargar contenido
                 content_resp = await client.get(file_url, headers=headers)
                 content_resp.raise_for_status()
+                
+                content_size = len(content_resp.content)
+                logging.info(f"Audio descargado exitosamente: {content_size} bytes desde {file_url}")
                 return content_resp.content
+            else:
+                logging.warning(f"No se encontró URL de descarga para media_id: {media_id}")
+                return None
     except Exception as e:
         logging.error(f"Error descargando media {media_id}: {e}")
     return None
