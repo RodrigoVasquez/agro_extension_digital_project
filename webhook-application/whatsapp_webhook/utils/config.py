@@ -15,13 +15,46 @@ def get_whatsapp_api_url(app_name: str) -> str:
     Returns:
         str: URL de la API de WhatsApp para la aplicación
     """
-    match app_name.upper():
-        case "AA":
-            return os.getenv("WHATSAPP_API_URL_AA", "")
-        case "PP":
-            return os.getenv("WHATSAPP_API_URL_PP", "")
-        case _:
-            return os.getenv("WHATSAPP_API_URL_DEFAULT", "")
+    import logging
+    
+    app_upper = app_name.upper()
+    
+    # URLs base para cada aplicación (extraídas de FACEBOOK_APP env vars)
+    app_urls = {
+        "AA": "https://graph.facebook.com/v22.0/692894087240362",
+        "PP": "https://graph.facebook.com/v22.0/619189944620159"
+    }
+    
+    # Intentar obtener la URL específica desde variables de entorno primero
+    if app_upper == "AA":
+        url = os.getenv("WHATSAPP_API_URL_AA")
+        env_var = "WHATSAPP_API_URL_AA"
+        default_url = app_urls["AA"]
+    elif app_upper == "PP":
+        url = os.getenv("WHATSAPP_API_URL_PP")
+        env_var = "WHATSAPP_API_URL_PP"
+        default_url = app_urls["PP"]
+    else:
+        url = os.getenv("WHATSAPP_API_URL_DEFAULT")
+        env_var = "WHATSAPP_API_URL_DEFAULT"
+        default_url = None
+    
+    # Si no encuentra la específica, intentar variables generales
+    if not url:
+        url = os.getenv("WHATSAPP_API_URL")
+        if not url and default_url:
+            # Usar URL por defecto basada en FACEBOOK_APP
+            url = default_url
+            logging.info(f"Usando URL por defecto para app {app_name}: {url}")
+        elif url:
+            logging.info(f"Usando WHATSAPP_API_URL genérica para app {app_name}: {url}")
+        else:
+            logging.error(f"No se encontró configuración de URL para app {app_name}. Variables intentadas: {env_var}, WHATSAPP_API_URL")
+            return ""
+    else:
+        logging.debug(f"URL de WhatsApp para app {app_name}: {url}")
+    
+    return url
 
 
 def get_whatsapp_token(app_name: str) -> str:
@@ -150,7 +183,22 @@ def get_whatsapp_config(app_name: str) -> dict:
     Returns:
         dict: Configuración con api_url y token
     """
-    return {
-        "api_url": get_whatsapp_api_url(app_name),
-        "token": get_whatsapp_token(app_name)
+    import logging
+    
+    api_url = get_whatsapp_api_url(app_name)
+    token = get_whatsapp_token(app_name)
+    
+    config = {
+        "api_url": api_url,
+        "token": token
     }
+    
+    # Log de configuración para diagnóstico
+    logging.info(f"Configuración WhatsApp para app {app_name}: api_url='{api_url}', token={'***' if token else 'VACIO'}")
+    
+    if not api_url:
+        logging.error(f"⚠️  CONFIGURACIÓN INCOMPLETA: api_url está vacío para app {app_name}")
+    if not token:
+        logging.error(f"⚠️  CONFIGURACIÓN INCOMPLETA: token está vacío para app {app_name}")
+    
+    return config

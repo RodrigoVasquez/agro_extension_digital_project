@@ -178,11 +178,21 @@ def create_document_message(media_id: str, filename: str, caption: Optional[str]
 async def download_media(media_id: str, whatsapp_api_url: str, token: str) -> Optional[bytes]:
     """Descarga media de WhatsApp."""
     try:
+        # Validar que whatsapp_api_url tenga el formato correcto
+        if not whatsapp_api_url:
+            logging.error(f"whatsapp_api_url está vacío para media_id: {media_id}")
+            return None
+            
+        if not whatsapp_api_url.startswith(("http://", "https://")):
+            logging.error(f"whatsapp_api_url no tiene protocolo válido: '{whatsapp_api_url}' para media_id: {media_id}")
+            return None
+        
         headers = {"Authorization": f"Bearer {token}"}
         async with httpx.AsyncClient() as client:
             # Obtener URL del media
             media_info_url = f"{whatsapp_api_url}/{media_id}"
             logging.info(f"Obteniendo información de media desde: {media_info_url}")
+            logging.debug(f"whatsapp_api_url original: '{whatsapp_api_url}'")
             
             resp = await client.get(media_info_url, headers=headers)
             resp.raise_for_status()
@@ -201,5 +211,5 @@ async def download_media(media_id: str, whatsapp_api_url: str, token: str) -> Op
                 logging.warning(f"No se encontró URL de descarga para media_id: {media_id}")
                 return None
     except Exception as e:
-        logging.error(f"Error descargando media {media_id}: {e}")
+        logging.error(f"Error descargando media {media_id} con URL '{whatsapp_api_url}': {e}")
     return None
