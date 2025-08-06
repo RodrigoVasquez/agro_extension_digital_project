@@ -19,38 +19,21 @@ def get_whatsapp_api_url(app_name: str) -> str:
     
     app_upper = app_name.upper()
     
-    # URLs base para cada aplicación (extraídas de FACEBOOK_APP env vars)
-    app_urls = {
-        "AA": "https://graph.facebook.com/v22.0/692894087240362",
-        "PP": "https://graph.facebook.com/v22.0/619189944620159"
-    }
-    
-    # Intentar obtener la URL específica desde variables de entorno primero
+    # Intentar obtener la URL específica desde variables de entorno
     if app_upper == "AA":
-        url = os.getenv("WHATSAPP_API_URL_AA")
-        env_var = "WHATSAPP_API_URL_AA"
-        default_url = app_urls["AA"]
+        url = os.getenv("ESTANDAR_AA_FACEBOOK_APP")
+        env_var = "ESTANDAR_AA_FACEBOOK_APP"
     elif app_upper == "PP":
-        url = os.getenv("WHATSAPP_API_URL_PP")
-        env_var = "WHATSAPP_API_URL_PP"
-        default_url = app_urls["PP"]
+        url = os.getenv("ESTANDAR_PP_FACEBOOK_APP")
+        env_var = "ESTANDAR_PP_FACEBOOK_APP"
     else:
-        url = os.getenv("WHATSAPP_API_URL_DEFAULT")
-        env_var = "WHATSAPP_API_URL_DEFAULT"
-        default_url = None
-    
-    # Si no encuentra la específica, intentar variables generales
+        # Intentar variables de entorno alternativas para otros casos
+        url = os.getenv("WHATSAPP_API_URL_DEFAULT") or os.getenv("WHATSAPP_API_URL")
+        env_var = "WHATSAPP_API_URL_DEFAULT or WHATSAPP_API_URL"
+
     if not url:
-        url = os.getenv("WHATSAPP_API_URL")
-        if not url and default_url:
-            # Usar URL por defecto basada en FACEBOOK_APP
-            url = default_url
-            logging.info(f"Usando URL por defecto para app {app_name}: {url}")
-        elif url:
-            logging.info(f"Usando WHATSAPP_API_URL genérica para app {app_name}: {url}")
-        else:
-            logging.error(f"No se encontró configuración de URL para app {app_name}. Variables intentadas: {env_var}, WHATSAPP_API_URL")
-            return ""
+        logging.error(f"No se encontró configuración de URL para app {app_name}. Variable de entorno {env_var} no está configurada.")
+        return ""
     else:
         logging.debug(f"URL de WhatsApp para app {app_name}: {url}")
     
@@ -116,9 +99,9 @@ def get_facebook_app_env_var(app_name: str) -> str:
     """
     match app_name.upper():
         case "AA":
-            return "FACEBOOK_APP_AA"
+            return "ESTANDAR_AA_FACEBOOK_APP"
         case "PP":
-            return "FACEBOOK_APP_PP"
+            return "ESTANDAR_PP_FACEBOOK_APP"
         case _:
             return "FACEBOOK_APP_DEFAULT"
 
@@ -135,9 +118,9 @@ def get_app_name_env_var(app_name: str) -> str:
     """
     match app_name.upper():
         case "AA":
-            return "APP_NAME_AA"
+            return "ESTANDAR_AA_APP_NAME"
         case "PP":
-            return "APP_NAME_PP"
+            return "ESTANDAR_PP_APP_NAME"
         case _:
             return "APP_NAME_DEFAULT"
 

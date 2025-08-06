@@ -18,7 +18,7 @@ async def send_whatsapp_message(
     Args:
         to: Número de teléfono del destinatario
         message: Contenido del mensaje estructurado
-        whatsapp_api_url: URL base de la API de WhatsApp
+        whatsapp_api_url: URL base de la API de WhatsApp (sin /messages)
         token: Token de autenticación
         
     Returns:
@@ -45,9 +45,12 @@ async def send_whatsapp_message(
     
     logging.info(f"Sending WhatsApp message to {to}")
     
+    # Construir URL correcta para envío de mensajes
+    messages_url = f"{whatsapp_api_url}/messages"
+    
     async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.post(
-            f"{whatsapp_api_url}/messages",
+            messages_url,
             json=payload,
             headers=headers
         )
@@ -68,7 +71,7 @@ async def download_whatsapp_media(
     
     Args:
         media_id: ID del archivo multimedia en WhatsApp
-        whatsapp_api_url: URL base de la API de WhatsApp
+        whatsapp_api_url: URL base de la API de WhatsApp (sin /media_id)
         token: Token de autenticación
         
     Returns:
@@ -84,9 +87,12 @@ async def download_whatsapp_media(
     logging.info(f"Downloading WhatsApp media: {media_id}")
     
     async with httpx.AsyncClient(timeout=60.0) as client:
+        # Construir URL correcta para obtener info del media
+        media_info_url = f"{whatsapp_api_url}/{media_id}"
+        
         # Primero obtener la URL de descarga
         media_response = await client.get(
-            f"{whatsapp_api_url}/{media_id}",
+            media_info_url,
             headers=headers
         )
         media_response.raise_for_status()
@@ -189,7 +195,7 @@ async def download_media(media_id: str, whatsapp_api_url: str, token: str) -> Op
         
         headers = {"Authorization": f"Bearer {token}"}
         async with httpx.AsyncClient() as client:
-            # Obtener URL del media
+            # Construir URL correcta para obtener información del media
             media_info_url = f"{whatsapp_api_url}/{media_id}"
             logging.info(f"Obteniendo información de media desde: {media_info_url}")
             logging.debug(f"whatsapp_api_url original: '{whatsapp_api_url}'")

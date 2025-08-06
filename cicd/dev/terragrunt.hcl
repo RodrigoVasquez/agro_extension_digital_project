@@ -36,8 +36,8 @@ inputs = {
   datastore_chileprunes_cl_id = "projects/agro-extension-digital-npe/locations/global/collections/default_collection/dataStores/0001-chileprunes-cl_1748096068703"
   service_account_webhook_app = "agent-webhook-sa-dev"
   service_account_display_name_webhook_app = "Agent Webhook Service Account"
-  estandar_aa_facebook_app = "https://graph.facebook.com/v22.0/586486637888050/messages"
-  estandar_pp_facebook_app = "https://graph.facebook.com/v22.0/586486637888050/messages"
+  estandar_aa_facebook_app = "https://graph.facebook.com/v22.0/586486637888050"
+  estandar_pp_facebook_app = "https://graph.facebook.com/v22.0/586486637888050"
   verify_token = run_cmd("gcloud", "secrets", "versions", "access", "latest", "--secret=webhook-verify-token", "--project=agro-extension-digital-npe")
   gar_image_location_webhook = "us-central1-docker.pkg.dev/agro-extension-digital-npe/agents/agent-webhook-app:latest"
   cloud_run_name_webhook = "agent-webhook-dev"
