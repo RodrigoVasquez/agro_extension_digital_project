@@ -6,11 +6,22 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import os
+import tomllib
 
 from .api.webhooks import router as webhook_router
 from .utils.logging import configure_app_logging
 from .utils.app_config import config
 from .models.api_models import HealthCheckResponse
+
+
+def get_version() -> str:
+    """Get version from pyproject.toml."""
+    try:
+        with open("pyproject.toml", "rb") as f:
+            data = tomllib.load(f)
+            return data["project"]["version"]
+    except Exception:
+        return "unknown"
 
 
 def create_app() -> FastAPI:
@@ -23,19 +34,22 @@ def create_app() -> FastAPI:
     # Configure logging first
     app_logger = configure_app_logging()
     
+    # Get version from pyproject.toml
+    version = get_version()
+    
     # Create FastAPI app with metadata
     app = FastAPI(
         title="WhatsApp Webhook Service",
         description="Modular WhatsApp webhook processor for handling various message types and integrating with AI agent services",
-        version=config.version,
-        docs_url="/docs" if config.is_development else None,
-        redoc_url="/redoc" if config.is_development else None,
+        version=version,
+        docs_url="/docs",
+        redoc_url="/redoc",
     )
     
     # Add CORS middleware
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"] if config.is_development else [],
+        allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["GET", "POST"],
         allow_headers=["*"],
@@ -50,8 +64,8 @@ def create_app() -> FastAPI:
         """Health check endpoint."""
         return HealthCheckResponse(
             status="healthy",
-            version=config.version,
-            environment=config.environment
+            version=version,
+            environment="production"
         )
     
     # Add root endpoint
@@ -61,16 +75,15 @@ def create_app() -> FastAPI:
         return JSONResponse(
             content={
                 "service": "WhatsApp Webhook Service",
-                "version": config.version,
+                "version": version,
                 "status": "running",
-                "environment": config.environment
+                "environment": "production"
             }
         )
     
     app_logger.info(f"FastAPI application created successfully", extra={
-        "version": config.version,
-        "environment": config.environment,
-        "docs_enabled": config.is_development
+        "version": version,
+        "environment": "production"
     })
     
     return app

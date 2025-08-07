@@ -141,6 +141,12 @@ variable "wsp_token" {
     type        = string
 }
 
+variable "whatsapp_base_url" {
+    description = "Base URL for WhatsApp Graph API"
+    type        = string
+    default     = "https://graph.facebook.com/v22.0"
+}
+
 variable "log_level" {
     description = "Nivel de logging para la aplicación webhook (DEBUG, INFO, WARNING, ERROR, CRITICAL)"
     type        = string

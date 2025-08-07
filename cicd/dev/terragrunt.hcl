@@ -44,6 +44,7 @@ inputs = {
   estandar_aa_app_name = "agent_aa_app"
   estandar_pp_app_name = "agent_pp_app"
   wsp_token = run_cmd("gcloud", "secrets", "versions", "access", "latest", "--secret=wsp-token", "--project=agro-extension-digital-npe")
+  whatsapp_base_url = "https://graph.facebook.com/v22.0"
   log_level = "DEBUG"  # Development environment uses DEBUG level for detailed logging
   bigquery_dataset = "sandbox_rsolar"  # BigQuery dataset for development environment
 }

@@ -139,6 +139,11 @@ resource "google_cloud_run_v2_service" "cloud_run_name_webhook" {
       }
 
       env {
+        name  = "WHATSAPP_BASE_URL"
+        value = var.whatsapp_base_url
+      }
+
+      env {
         name  = "LOG_LEVEL"
         value = var.log_level
       }
