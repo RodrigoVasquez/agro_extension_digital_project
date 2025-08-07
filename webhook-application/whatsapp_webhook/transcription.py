@@ -19,9 +19,11 @@ async def transcribe_audio_file(audio_content: bytes) -> Optional[str]:
         
         if response.results:
             transcript = response.results[0].alternatives[0].transcript
-            logger.info(f"Transcrito: {transcript[:50]}...")
+            logger.info(f"Successfully transcribed audio: {transcript[:50]}...")
             return transcript.strip()
+        
+        logger.warning("Audio transcription returned no results.")
         return None
     except Exception as e:
-        logger.error(f"Error transcribiendo: {e}")
+        logger.error(f"Error during audio transcription: {e}", exc_info=True)
         return None
