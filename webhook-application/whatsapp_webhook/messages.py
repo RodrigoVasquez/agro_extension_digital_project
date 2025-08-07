@@ -25,7 +25,7 @@ def send_message(user: str, app_name: str, session_id: str, message: str) -> str
     logger = get_logger("agent_communication", {"app_name": app_name})
     
     if not config.agent.url:
-        logger.error("APP_URL environment variable is not set")
+        logger.error("Agent URL is not configured")
         return "Error: Servicio de agente no configurado (URL)."
 
     try:

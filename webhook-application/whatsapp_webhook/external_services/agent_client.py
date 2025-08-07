@@ -18,8 +18,8 @@ async def send_to_agent(
     """
     Sends a message to the agent service.
     """
-    if not config.agent_url:
-        raise ValueError("Agent URL (APP_URL) is not configured.")
+    if not config.agent.url:
+        raise ValueError("Agent URL is not configured.")
 
     payload = {
         "app_name": app_name,
@@ -29,7 +29,7 @@ async def send_to_agent(
         "streaming": False,
     }
 
-    id_token = await get_id_token(config.agent_url)
+    id_token = await get_id_token(config.agent.url)
     headers = {
         "Authorization": f"Bearer {id_token}",
         "Content-Type": "application/json",
@@ -37,7 +37,7 @@ async def send_to_agent(
 
     logging.info(f"Sending message to agent for app {app_name}")
     async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(f"{config.agent_url}/run", json=payload, headers=headers)
+        response = await client.post(f"{config.agent.url}/run", json=payload, headers=headers)
         response.raise_for_status()
         response_data = response.json()
 
