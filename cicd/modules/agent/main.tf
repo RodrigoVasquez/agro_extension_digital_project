@@ -22,23 +22,18 @@ resource "google_project_iam_member" "agent_aa_sa_role_discovery" {
     member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
 }
 
-resource "google_project_iam_member" "agent_aa_connection_invoker" {   
+resource "google_project_iam_member" "agent_aa_sa_role_bigquery" {   
     project = var.project_id
-    role    = "roles/connectors.invoker"
+    role    = "roles/bigquery.dataViewer"
     member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
 }
 
-resource "google_project_iam_member" "agent_aa_connection_viewer" {   
+resource "google_project_iam_member" "agent_aa_sa_role_bigquery_job" {   
     project = var.project_id
-    role    = "roles/connectors.viewer"
+    role    = "roles/bigquery.jobUser"
     member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
 }
 
-resource "google_project_iam_member" "agent_aa_integration_invoker" {   
-    project = var.project_id
-    role    = "roles/integrations.integrationInvoker"
-    member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
-}
 
 resource "google_cloud_run_v2_service" "cloud_run_name_agent_aa" {
   name     = var.cloud_run_name_agent_aa
@@ -48,6 +43,12 @@ resource "google_cloud_run_v2_service" "cloud_run_name_agent_aa" {
   template {
     containers {
       image = var.gar_image_location_agent_aa
+      
+      resources {
+        limits = {
+          memory = "1Gi"
+        }
+      }
 
       env {
         name  = "GOOGLE_GENAI_USE_VERTEXAI"
@@ -84,11 +85,11 @@ resource "google_cloud_run_v2_service" "cloud_run_name_agent_aa" {
       env {
         name  = "DATASTORE_CHILEPRUNES_CL_ID"
         value = var.datastore_chileprunes_cl_id
-        }
+      }
       env {
-        name  = "BIGQUERY_INTEGRATION_APPLICATION_CONNECTOR_ID"
-        value = var.bigquery_integration_application_connector_id
-        }
+        name  = "BIGQUERY_DATASET"
+        value = var.bigquery_dataset
+      }
     }
 
     service_account = google_service_account.agent_aa_app.email

@@ -91,11 +91,6 @@ variable "datastore_chileprunes_cl_id" {
     type        = string
 }
 
-variable "bigquery_integration_application_connector_id" {
-    description = "BigQuery integration application connector ID"
-    type        = string
-}
-
 variable "cloud_run_name_webhook" {
   description = "Nombre del servicio de Cloud Run para el webhook"
   type        = string
@@ -150,4 +145,9 @@ variable "log_level" {
     description = "Nivel de logging para la aplicación webhook (DEBUG, INFO, WARNING, ERROR, CRITICAL)"
     type        = string
     default     = "INFO"
+}
+
+variable "bigquery_dataset" {
+    description = "BigQuery dataset name for the agents"
+    type        = string
 }

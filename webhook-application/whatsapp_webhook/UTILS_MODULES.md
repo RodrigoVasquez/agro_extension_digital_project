@@ -114,10 +114,7 @@ result = await send_whatsapp_message(
 
 ### Configuración
 ```python
-from whatsapp_webhook.utils.config import (
-    get_whatsapp_api_url, 
-    validate_environment_config
-)
+from whatsapp_webhook.utils.app_config import config
 
 # Obtener URL específica por aplicación
 url = get_whatsapp_api_url("AA")

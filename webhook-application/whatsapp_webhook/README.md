@@ -55,11 +55,7 @@ logger.log_whatsapp_response(user_id, app_name, status_code, response_data)
 ### 3. **Funciones de Configuración**
 
 ```python
-from whatsapp_webhook.utils.config import (
-    get_whatsapp_api_url,
-    get_whatsapp_token,
-    validate_environment_config
-)
+from whatsapp_webhook.utils.app_config import config
 
 # Obtener configuración específica por app
 api_url = get_whatsapp_api_url("AA")

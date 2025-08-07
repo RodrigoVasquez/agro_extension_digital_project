@@ -5,171 +5,86 @@ import httpx
 import logging
 from typing import Any, Dict, Optional
 
-
 async def send_whatsapp_message(
     to: str,
     message: Dict[str, Any],
     whatsapp_api_url: str,
     token: str
 ) -> Dict[str, Any]:
-    """
-    Envía mensaje a WhatsApp API - función simple y clara.
-    
-    Args:
-        to: Número de teléfono del destinatario
-        message: Contenido del mensaje estructurado
-        whatsapp_api_url: URL base de la API de WhatsApp
-        token: Token de autenticación
-        
-    Returns:
-        dict: Respuesta de la API de WhatsApp
-        
-    Raises:
-        httpx.HTTPError: Si la comunicación con WhatsApp falla
-    """
-    # Asegurarse de que el número tenga formato correcto
+    """Sends a message via the WhatsApp API."""
     if not to.startswith("+"):
         to = f"+{to}"
     
-    payload = {
-        "messaging_product": "whatsapp",
-        "recipient_type": "individual",
-        "to": to,
-        **message
-    }
-    
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
+    payload = {"messaging_product": "whatsapp", "to": to, **message}
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
     
     logging.info(f"Sending WhatsApp message to {to}")
-    
     async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(
-            f"{whatsapp_api_url}/messages",
-            json=payload,
-            headers=headers
-        )
+        response = await client.post(whatsapp_api_url, json=payload, headers=headers)
         response.raise_for_status()
-        
         result = response.json()
         logging.info(f"WhatsApp message sent successfully: {result}")
         return result
 
 
-async def download_whatsapp_media(
-    media_id: str,
-    whatsapp_api_url: str,
-    token: str
-) -> bytes:
-    """
-    Descarga media de WhatsApp - función directa.
-    
-    Args:
-        media_id: ID del archivo multimedia en WhatsApp
-        whatsapp_api_url: URL base de la API de WhatsApp
-        token: Token de autenticación
-        
-    Returns:
-        bytes: Contenido del archivo multimedia
-        
-    Raises:
-        httpx.HTTPError: Si la descarga falla
-    """
-    headers = {
-        "Authorization": f"Bearer {token}"
-    }
-    
-    logging.info(f"Downloading WhatsApp media: {media_id}")
-    
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        # Primero obtener la URL de descarga
-        media_response = await client.get(
-            f"{whatsapp_api_url}/{media_id}",
-            headers=headers
-        )
-        media_response.raise_for_status()
-        
-        media_info = media_response.json()
-        download_url = media_info.get("url")
-        
-        if not download_url:
-            raise ValueError(f"No download URL found for media {media_id}")
-        
-        # Descargar el archivo
-        file_response = await client.get(download_url, headers=headers)
-        file_response.raise_for_status()
-        
-        logging.info(f"Media downloaded successfully: {len(file_response.content)} bytes")
-        return file_response.content
-
 
 def create_text_message(body: str, preview_url: bool = False) -> Dict[str, Any]:
-    """
-    Crea un mensaje de texto para WhatsApp.
-    
-    Args:
-        body: Contenido del mensaje
-        preview_url: Si mostrar preview de URLs
-        
-    Returns:
-        dict: Estructura del mensaje de texto
-    """
-    return {
-        "type": "text",
-        "text": {
-            "body": body,
-            "preview_url": preview_url
-        }
-    }
-
+    """Creates a WhatsApp text message structure."""
+    return {"type": "text", "text": {"body": body, "preview_url": preview_url}}
 
 def create_image_message(media_id: str, caption: Optional[str] = None) -> Dict[str, Any]:
-    """
-    Crea un mensaje de imagen para WhatsApp.
-    
-    Args:
-        media_id: ID de la imagen en WhatsApp
-        caption: Texto opcional que acompaña la imagen
-        
-    Returns:
-        dict: Estructura del mensaje de imagen
-    """
-    message = {
-        "type": "image",
-        "image": {
-            "id": media_id
-        }
-    }
-    
+    """Creates a WhatsApp image message structure."""
+    message = {"type": "image", "image": {"id": media_id}}
     if caption:
         message["image"]["caption"] = caption
-        
     return message
-
 
 def create_document_message(media_id: str, filename: str, caption: Optional[str] = None) -> Dict[str, Any]:
-    """
-    Crea un mensaje de documento para WhatsApp.
-    
-    Args:
-        media_id: ID del documento en WhatsApp
-        filename: Nombre del archivo
-        caption: Texto opcional que acompaña el documento
-        
-    Returns:
-        dict: Estructura del mensaje de documento
-    """
-    message = {
-        "type": "document",
-        "document": {
-            "id": media_id,
-            "filename": filename
-        }
-    }
-    
+    """Creates a WhatsApp document message structure."""
+    message = {"type": "document", "document": {"id": media_id, "filename": filename}}
     if caption:
         message["document"]["caption"] = caption
-        
     return message
+
+async def download_whatsapp_media(media_id: str, whatsapp_api_url: str, token: str) -> Optional[bytes]:
+    """Downloads media content from WhatsApp using the media ID."""
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    # Extract base URL and construct media endpoint
+    # whatsapp_api_url is typically: https://graph.facebook.com/v18.0/PHONE_NUMBER_ID/messages
+    # We need: https://graph.facebook.com/v18.0/MEDIA_ID
+    base_url = whatsapp_api_url.split('/messages')[0]  # Remove /messages
+    # Remove the phone number part to get the graph API base
+    api_parts = base_url.split('/')
+    if len(api_parts) >= 4:  # https://graph.facebook.com/v18.0/PHONE_NUMBER_ID
+        graph_base = '/'.join(api_parts[:-1])  # https://graph.facebook.com/v18.0
+        media_url_endpoint = f"{graph_base}/{media_id}"
+    else:
+        logging.error(f"Cannot parse WhatsApp API URL: {whatsapp_api_url}")
+        return None
+    
+    logging.info(f"Getting media URL for ID: {media_id} from endpoint: {media_url_endpoint}")
+    
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        try:
+            # Get media info
+            media_response = await client.get(media_url_endpoint, headers=headers)
+            media_response.raise_for_status()
+            media_info = media_response.json()
+            
+            logging.info(f"Media info response: {media_info}")
+            
+            if "url" not in media_info:
+                logging.error(f"No URL found in media response: {media_info}")
+                return None
+            
+            # Download the actual media content
+            media_content_response = await client.get(media_info["url"], headers=headers)
+            media_content_response.raise_for_status()
+            
+            logging.info(f"Media downloaded successfully, size: {len(media_content_response.content)} bytes")
+            return media_content_response.content
+            
+        except Exception as e:
+            logging.error(f"Error downloading media {media_id}: {e}, endpoint: {media_url_endpoint}", exc_info=True)
+            return None

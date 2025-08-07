@@ -38,14 +38,12 @@ inputs = {
   datastore_faq_id = "projects/agro-extension-digital-prd/locations/global/collections/default_collection/dataStores/0001-faq_1749006101377"
   datastore_chileprunes_cl_id = "projects/agro-extension-digital-prd/locations/global/collections/default_collection/dataStores/0001-chileprunes-cl_1749005569113"
 
-  bigquery_integration_application_connector_id = "c0001-bq-connector" # This might need a -prd suffix or be a different connector for PRD
-
   service_account_webhook_app = "agent-webhook-sa-prd" # Added -prd
   service_account_display_name_webhook_app = "Agent Webhook Service Account PRD" # Added PRD
 
   # Secrets - set to placeholder values for PRD
-  estandar_aa_facebook_app = "https://graph.facebook.com/v22.0/692894087240362/messages"
-  estandar_pp_facebook_app = "https://graph.facebook.com/v22.0/619189944620159/messages"
+  estandar_aa_facebook_app = "https://graph.facebook.com/v22.0/692894087240362"
+  estandar_pp_facebook_app = "https://graph.facebook.com/v22.0/619189944620159"
   verify_token = run_cmd("gcloud", "secrets", "versions", "access", "latest", "--secret=webhook-verify-token", "--project=agro-extension-digital-prd")
 
   # GAR image for webhook - assuming same :latest tag for now
@@ -57,6 +55,7 @@ inputs = {
 
   wsp_token = run_cmd("gcloud", "secrets", "versions", "access", "latest", "--secret=wsp-token", "--project=agro-extension-digital-prd")
   log_level = "INFO"  # Production environment uses INFO level for performance and log volume control
+  bigquery_dataset = "agro_extension_digital_prd_dataset"  # BigQuery dataset for production environment
 }
 
 terraform {
