@@ -21,7 +21,7 @@ Usage:
     
     # Utilities
     from whatsapp_webhook.utils.logging import get_logger
-    from whatsapp_webhook.utils.config import get_whatsapp_api_url
+    from .utils.app_config import config
     from whatsapp_webhook.utils.helpers import validate_phone_number
     
     # Message types

@@ -45,7 +45,7 @@ estandar_pp_facebook_app = "https://graph.facebook.com/v22.0/586486637888050"
 
 ### 4. Actualización de Configuración de Utilidades
 
-**Archivo:** `webhook-application/whatsapp_webhook/utils/config.py`
+**Archivo:** `webhook-application/whatsapp_webhook/utils/app_config.py`
 
 **Cambios:**
 - Eliminadas URLs hardcoded desactualizadas
