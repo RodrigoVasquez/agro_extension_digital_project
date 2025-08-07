@@ -6,11 +6,10 @@ and integrating with AI agent services.
 
 Modular Structure:
 - auth: Authentication utilities (Google Cloud)
-- external_services: Client modules for external APIs (Agent, WhatsApp)
+- external_services: Client modules for external APIs (Agent, WhatsApp, Sessions)
 - utils: General utilities (helpers, config, logging)
 - message_types: Data structures and enums
-- sessions: Session management
-- messages: Message processing (legacy, being refactored)
+- messages: Message processing
 
 Usage:
     # Authentication
