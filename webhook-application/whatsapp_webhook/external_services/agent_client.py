@@ -50,12 +50,11 @@ async def send_to_agent(
         logging.warning(f"Unexpected response format from agent: {response_data}")
         return {"response": "Error: Could not extract text from agent response.", "raw_response": response_data}
 
-async def create_agent_session(user_id: str, app_name: str, session_id: str) -> dict[str, Any]:
+async def create_agent_session(user_id: str, app_config: AppSpecificConfig, session_id: str) -> dict[str, Any]:
     """Creates a session for the user in the agent service if it doesn't already exist."""
     if not config.agent_url:
         raise ValueError("Agent URL is not configured.")
 
-    app_config = config.aa if app_name == "AA" else config.pp
     session_url = f"{config.agent_url}/apps/{app_config.app_name}/users/{user_id}/sessions/{session_id}"
 
     id_token = await get_id_token(config.agent_url)

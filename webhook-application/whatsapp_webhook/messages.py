@@ -110,7 +110,7 @@ async def _process_single_text_message(
 ) -> None:
     """Process a single text message from WhatsApp."""
     app_name = app_config.app_name
-    await create_agent_session(sender_wa_id, app_name, sender_wa_id)
+    await create_agent_session(sender_wa_id, app_config, sender_wa_id)
     message_text = message.get_message_content() or ""
     agent_response = await send_message_to_agent(
         sender_wa_id, app_config, sender_wa_id, message_text
