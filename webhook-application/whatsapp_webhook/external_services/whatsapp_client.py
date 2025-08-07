@@ -46,15 +46,12 @@ def create_document_message(media_id: str, filename: str, caption: Optional[str]
         message["document"]["caption"] = caption
     return message
 
-async def download_whatsapp_media(media_id: str, whatsapp_api_url: str, token: str) -> Optional[bytes]:
+async def download_whatsapp_media(media_id: str, whatsapp_base_url: str, token: str) -> Optional[bytes]:
     """Downloads media content from WhatsApp using the media ID."""
     headers = {"Authorization": f"Bearer {token}"}
     
-    # Construir la URL correcta para obtener información del media
-    # La URL base debe ser algo como: https://graph.facebook.com/v18.0/PHONE_NUMBER_ID/
-    # Y el endpoint para media es: https://graph.facebook.com/v18.0/MEDIA_ID
-    base_url = whatsapp_api_url.replace('/messages', '')  # Remover /messages del final
-    media_url_endpoint = f"{base_url.rstrip('/')}/{media_id}"
+    # Usar la URL base para obtener información del media
+    media_url_endpoint = f"{whatsapp_base_url}/{media_id}"
     
     logging.info(f"Getting media URL for ID: {media_id} from endpoint: {media_url_endpoint}")
     

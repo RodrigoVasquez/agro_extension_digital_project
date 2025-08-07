@@ -142,7 +142,7 @@ async def handle_audio_message(
         return
 
     try:
-        audio_content = await download_whatsapp_media(audio_id, facebook_app_url, config.wsp_token)
+        audio_content = await download_whatsapp_media(audio_id, config.whatsapp_base_url, config.wsp_token)
         if not audio_content:
             await send_whatsapp_message(
                 phone, create_text_message("No pude descargar tu audio."), f"{facebook_app_url}/messages", config.wsp_token

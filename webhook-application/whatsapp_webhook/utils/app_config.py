@@ -12,6 +12,9 @@ class AppConfig(BaseModel):
     verify_token: str
     wsp_token: str
     
+    # WhatsApp API configuration
+    whatsapp_base_url: str
+    
     # App-specific nested configurations
     aa_facebook_app_url: str
     aa_app_name: str
@@ -26,6 +29,7 @@ def load_config_from_env() -> AppConfig:
         log_level=os.getenv("LOG_LEVEL", "INFO"),
         verify_token=os.getenv("VERIFY_TOKEN"),
         wsp_token=os.getenv("WSP_TOKEN"),
+        whatsapp_base_url=os.getenv("WHATSAPP_BASE_URL", "https://graph.facebook.com/v22.0"),
         aa_facebook_app_url=os.getenv("ESTANDAR_AA_FACEBOOK_APP"),
         aa_app_name=os.getenv("ESTANDAR_AA_APP_NAME"),
         pp_facebook_app_url=os.getenv("ESTANDAR_PP_FACEBOOK_APP"),

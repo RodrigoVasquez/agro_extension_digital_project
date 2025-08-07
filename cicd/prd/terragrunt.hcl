@@ -54,6 +54,7 @@ inputs = {
   estandar_pp_app_name = "agent_pp_app" # Added _prd
 
   wsp_token = run_cmd("gcloud", "secrets", "versions", "access", "latest", "--secret=wsp-token", "--project=agro-extension-digital-prd")
+  whatsapp_base_url = "https://graph.facebook.com/v22.0"
   log_level = "INFO"  # Production environment uses INFO level for performance and log volume control
   bigquery_dataset = "agro_extension_digital_prd_dataset"  # BigQuery dataset for production environment
 }
