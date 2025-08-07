@@ -4,7 +4,7 @@ Configuration management for WhatsApp webhook application.
 
 import os
 import logging
-from typing import Optional, List
+from typing import Optional, List, Union
 from enum import Enum
 
 
@@ -90,8 +90,10 @@ class AppConfig:
         # Initialize sub-configurations
         self.agent = AgentConfig()
     
-    def get_whatsapp_config(self, app_type: AppType) -> WhatsAppConfig:
+    def get_whatsapp_config(self, app_type: Union[AppType, str]) -> WhatsAppConfig:
         """Get WhatsApp configuration for a specific app type."""
+        if isinstance(app_type, str):
+            app_type = AppType(app_type.lower())
         return WhatsAppConfig(app_type)
     
     @property

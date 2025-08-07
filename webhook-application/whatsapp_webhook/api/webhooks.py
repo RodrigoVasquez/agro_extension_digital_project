@@ -17,8 +17,8 @@ logger = get_logger("webhook_router")
 
 async def _verify_webhook(app_type: AppType, params: Request.query_params) -> JSONResponse:
     """Generic webhook verification handler."""
-    webhook_config = config.get_webhook_config(app_type)
-    app_name = webhook_config.app_name or app_type.value.upper()
+    whatsapp_config = config.get_whatsapp_config(app_type)
+    app_name = whatsapp_config.app_name or app_type.value.upper()
     
     mode = params.get("hub.mode")
     token = params.get("hub.verify_token")
@@ -27,7 +27,7 @@ async def _verify_webhook(app_type: AppType, params: Request.query_params) -> JS
     log_extra = {"token_provided": bool(token), "challenge_provided": bool(challenge)}
     logger.log_webhook_verification(app_name, mode or "None", False, log_extra)
 
-    if mode == "subscribe" and token == webhook_config.verify_token:
+    if mode == "subscribe" and token == whatsapp_config.verify_token:
         if not challenge or not challenge.isdigit():
             logger.warning(f"{app_name} Webhook verification failed: Invalid challenge")
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid challenge")
@@ -40,7 +40,7 @@ async def _verify_webhook(app_type: AppType, params: Request.query_params) -> JS
 
 async def _handle_webhook_post(app_type: AppType, request: Request) -> JSONResponse:
     """Generic webhook POST handler."""
-    app_name = config.get_webhook_config(app_type).app_name or app_type.value.upper()
+    app_name = config.get_whatsapp_config(app_type).app_name or app_type.value.upper()
     logger.info(f"Processing webhook for {app_name}", extra={"endpoint": str(request.url)})
 
     try:
