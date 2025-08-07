@@ -21,32 +21,34 @@ class AgentConfig:
         self.url: Optional[str] = os.getenv("APP_URL")
         self.timeout: int = int(os.getenv("AGENT_TIMEOUT", "30"))
         
-        # Agent mapping configuration
-        self.agent_paths = {
+        # Available agent applications
+        self.available_agents = {
+            "agent_aa_app": "agent_aa_app",
+            "agent_pp_app": "agent_pp_app"
+        }
+        
+        # Agent paths for sessions (these need the full path)
+        self.agent_session_paths = {
             "agent_aa_app": "/apps/agent_aa_app",
             "agent_pp_app": "/apps/agent_pp_app"
         }
     
-    def get_agent_url(self, agent_name: str) -> Optional[str]:
-        """Get the complete URL for a specific agent."""
+    def get_run_url(self) -> Optional[str]:
+        """Get the run endpoint URL."""
+        if not self.url:
+            return None
+        return f"{self.url}/run"
+    
+    def get_agent_session_url(self, agent_name: str, user_id: str, session_id: str) -> Optional[str]:
+        """Get the complete session URL for a specific agent."""
         if not self.url:
             return None
         
-        agent_path = self.agent_paths.get(agent_name)
+        agent_path = self.agent_session_paths.get(agent_name)
         if not agent_path:
             return None
             
-        return f"{self.url}{agent_path}"
-    
-    def get_all_agent_urls(self) -> Dict[str, str]:
-        """Get URLs for all agents."""
-        if not self.url:
-            return {}
-        
-        return {
-            agent_name: f"{self.url}{path}"
-            for agent_name, path in self.agent_paths.items()
-        }
+        return f"{self.url}{agent_path}/users/{user_id}/sessions/{session_id}"
     
     def validate(self) -> List[str]:
         """Validate agent configuration."""
@@ -91,28 +93,22 @@ class WhatsAppConfig:
         }
         return mapping.get(self._app_suffix, self._app_suffix.lower())
     
-    def get_agent_url(self, agent_name: Optional[str] = None) -> Optional[str]:
-        """Get the complete agent URL with the app-specific path."""
-        target_agent = agent_name or self.agent_app_name
-        return self._agent_config.get_agent_url(target_agent)
-    
-    def get_agent_run_url(self, agent_name: Optional[str] = None) -> Optional[str]:
-        """Get the complete agent run endpoint URL."""
-        agent_url = self.get_agent_url(agent_name)
-        return f"{agent_url}/run" if agent_url else None
+    def get_agent_run_url(self) -> Optional[str]:
+        """Get the run endpoint URL."""
+        return self._agent_config.get_run_url()
     
     def get_agent_session_url(self, user_id: str, session_id: str, agent_name: Optional[str] = None) -> Optional[str]:
         """Get the complete agent session endpoint URL."""
-        agent_url = self.get_agent_url(agent_name)
-        return f"{agent_url}/users/{user_id}/sessions/{session_id}" if agent_url else None
+        target_agent = agent_name or self.agent_app_name
+        return self._agent_config.get_agent_session_url(target_agent, user_id, session_id)
     
-    def get_all_agent_urls(self) -> Dict[str, str]:
-        """Get URLs for all available agents."""
-        return self._agent_config.get_all_agent_urls()
+    def get_available_agents(self) -> Dict[str, str]:
+        """Get all available agents."""
+        return self._agent_config.available_agents
     
     def can_route_to_agent(self, agent_name: str) -> bool:
         """Check if this config can route to a specific agent."""
-        return agent_name in self._agent_config.agent_paths
+        return agent_name in self._agent_config.available_agents
     
     def validate(self) -> List[str]:
         """Validate WhatsApp configuration."""
