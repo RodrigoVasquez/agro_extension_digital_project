@@ -33,14 +33,14 @@ def load_config_from_env() -> AppConfig:
         aa=AppSpecificConfig(
             facebook_app_url=os.getenv("ESTANDAR_AA_FACEBOOK_APP"),
             app_name=os.getenv("ESTANDAR_AA_APP_NAME"),
-            verify_token=os.getenv("VERIFY_TOKEN_AA"),
-            wsp_token=os.getenv("WSP_TOKEN_AA"),
+            verify_token=os.getenv("VERIFY_TOKEN"),
+            wsp_token=os.getenv("WSP_TOKEN"),
         ),
         pp=AppSpecificConfig(
             facebook_app_url=os.getenv("ESTANDAR_PP_FACEBOOK_APP"),
             app_name=os.getenv("ESTANDAR_PP_APP_NAME"),
-            verify_token=os.getenv("VERIFY_TOKEN_PP"),
-            wsp_token=os.getenv("WSP_TOKEN_PP"),
+            verify_token=os.getenv("VERIFY_TOKEN"),
+            wsp_token=os.getenv("WSP_TOKEN"),
         ),
     )
 
