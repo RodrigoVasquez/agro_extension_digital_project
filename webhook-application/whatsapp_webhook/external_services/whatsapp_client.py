@@ -5,6 +5,9 @@ import httpx
 import logging
 from typing import Any, Dict, Optional
 
+# Import typing indicator functions
+from .whatsapp_actions import send_typing_indicator, mark_message_as_read, TypingContext
+
 async def send_whatsapp_message(
     to: str,
     message: Dict[str, Any],

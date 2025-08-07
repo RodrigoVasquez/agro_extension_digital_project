@@ -4,6 +4,8 @@ from typing import Optional, Dict, Any, List, TYPE_CHECKING
 
 from .external_services.agent_client import send_to_agent, create_agent_session
 from .external_services.whatsapp_client import send_whatsapp_message, create_text_message, download_whatsapp_media
+from .external_services.whatsapp_actions import TypingContext, mark_message_as_read
+from .external_services.whatsapp_enhanced import ConversationManager
 from .transcription import transcribe_audio_file
 from .utils.logging import get_logger
 from .utils.app_config import config, AppType, WhatsAppConfig
@@ -54,13 +56,45 @@ async def _process_single_text_message(
     message: "WhatsAppMessage",
     whatsapp_config: WhatsAppConfig
 ) -> None:
-    """Process a single text message from WhatsApp."""
+    """Process a single text message from WhatsApp with enhanced UX."""
     app_name = whatsapp_config.app_type.value
-    await create_agent_session(sender_wa_id, app_name, sender_wa_id)
-    message_text = message.get_message_content() or ""
-    agent_response = await send_message_to_agent(sender_wa_id, whatsapp_config, sender_wa_id, message_text)
-    response_text = agent_response or "No pude procesar tu mensaje. Intenta de nuevo."
-    await _send_whatsapp_acknowledgment(sender_wa_id, response_text, whatsapp_config)
+    logger = get_logger("text_processor", {"app_name": app_name})
+    
+    try:
+        # Initialize conversation manager for enhanced UX
+        conversation_manager = ConversationManager(whatsapp_config)
+        
+        # Create agent session
+        await create_agent_session(sender_wa_id, app_name, sender_wa_id)
+        
+        # Get message content
+        message_text = message.get_message_content() or ""
+        logger.info(f"Processing text message from {sender_wa_id}: {len(message_text)} chars")
+        
+        # Send message to agent with typing indicator context
+        async with TypingContext(sender_wa_id, f"{whatsapp_config.api_url}/messages", whatsapp_config.token):
+            agent_response = await send_message_to_agent(sender_wa_id, whatsapp_config, sender_wa_id, message_text)
+        
+        # Prepare response
+        response_text = agent_response or "No pude procesar tu mensaje. Intenta de nuevo."
+        
+        # Send response with enhanced UX (automatic typing indicators, message splitting, etc.)
+        success = await conversation_manager.send_agent_response_with_ux(
+            user_wa_id=sender_wa_id,
+            agent_response=response_text,
+            show_thinking=len(response_text) > 200  # Show thinking for complex responses
+        )
+        
+        if success:
+            logger.info(f"Successfully sent enhanced response to {sender_wa_id}")
+        else:
+            logger.error(f"Failed to send enhanced response to {sender_wa_id}")
+            # Fallback to simple message
+            await _send_whatsapp_acknowledgment(sender_wa_id, response_text, whatsapp_config)
+            
+    except Exception as e:
+        logger.error(f"Error processing text message for {sender_wa_id}: {e}", exc_info=True)
+        await _send_whatsapp_acknowledgment(sender_wa_id, "Error procesando mensaje.", whatsapp_config)
 
 async def _process_non_text_message(
     sender_wa_id: str,
@@ -118,24 +152,33 @@ async def handle_audio_message(phone: str, audio_id: str, whatsapp_config: Whats
     api_url = whatsapp_config.api_url
     token = whatsapp_config.token
     app_name = whatsapp_config.app_type.value
+    messages_url = f"{api_url}/messages"
 
     if not api_url or not token:
         logging.error(f"Incomplete WhatsApp config for audio in {app_name}")
         return
 
     try:
-        audio_content = await download_whatsapp_media(audio_id, api_url, token)
-        if not audio_content:
-            await send_whatsapp_message(phone, create_text_message("No pude descargar tu audio."), f"{api_url}/messages", token)
-            return
+        # Use typing context for audio processing
+        async with TypingContext(phone, messages_url, token):
+            # Download audio
+            audio_content = await download_whatsapp_media(audio_id, api_url, token)
+            if not audio_content:
+                await send_whatsapp_message(phone, create_text_message("No pude descargar tu audio."), messages_url, token)
+                return
 
-        transcript = await transcribe_audio_file(audio_content)
-        if not transcript:
-            await send_whatsapp_message(phone, create_text_message("No pude entender tu audio."), f"{api_url}/messages", token)
-            return
+            # Transcribe audio
+            transcript = await transcribe_audio_file(audio_content)
+            if not transcript:
+                await send_whatsapp_message(phone, create_text_message("No pude entender tu audio."), messages_url, token)
+                return
 
-        response = await send_message_to_agent(phone, whatsapp_config, phone, transcript)
-        await send_whatsapp_message(phone, create_text_message(response), f"{api_url}/messages", token)
+            # Send to agent and get response
+            response = await send_message_to_agent(phone, whatsapp_config, phone, transcript)
+            
+            # Send response (typing indicator stops automatically)
+            await send_whatsapp_message(phone, create_text_message(response), messages_url, token)
+            
     except Exception as e:
         logging.error(f"Error processing audio: {e}", exc_info=True)
         await send_whatsapp_message(phone, create_text_message("Error procesando tu audio."), f"{api_url}/messages", token)

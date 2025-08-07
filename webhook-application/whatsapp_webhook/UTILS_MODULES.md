@@ -38,13 +38,18 @@ Clientes para comunicación con APIs externas.
 
 **Módulos:**
 - `agent_client.py`: Comunicación con el servicio de agente IA
-- `whatsapp_client.py`: Comunicación con WhatsApp Business API
+- `whatsapp_client.py`: Comunicación básica con WhatsApp Business API
+- `whatsapp_actions.py`: Acciones específicas de WhatsApp (typing, mark_seen)
+- `whatsapp_enhanced.py`: Funcionalidad mejorada de UX para WhatsApp
 
 **Funciones principales:**
 - `send_to_agent()`: Envía mensaje al agente IA
 - `send_whatsapp_message()`: Envía mensaje a WhatsApp
 - `download_whatsapp_media()`: Descarga archivos multimedia
 - `create_text_message()`, `create_image_message()`: Creadores de mensajes
+- `send_typing_indicator()`: Muestra indicador de escritura
+- `mark_message_as_read()`: Marca mensajes como leídos
+- `ConversationManager`: Gestión avanzada de conversaciones con UX mejorada
 
 ### 🛠️ `utils/` - Utilidades Generales
 Funciones de ayuda, configuración y logging.
