@@ -14,9 +14,17 @@ async def send_to_agent(
     user_id: str,
     session_id: str,
     message: str,
+    agent_name: Optional[str] = None,
 ) -> dict[str, Any]:
     """
     Sends a message to the agent service.
+    
+    Args:
+        whatsapp_config: WhatsApp configuration
+        user_id: User identifier
+        session_id: Session identifier  
+        message: Message to send
+        agent_name: Specific agent name to use (overrides config default)
     """
     if not config.agent.url:
         raise ValueError("Agent URL is not configured.")
@@ -26,8 +34,11 @@ async def send_to_agent(
     if not agent_run_url:
         raise ValueError("Agent run URL is not configured.")
 
+    # Use provided agent name or fall back to config default
+    target_agent_name = agent_name or whatsapp_config.agent_app_name
+
     payload = {
-        "app_name": whatsapp_config.agent_app_name,
+        "app_name": target_agent_name,  # This determines which agent processes the message
         "user_id": user_id,
         "session_id": session_id,
         "new_message": {"role": "user", "parts": [{"text": message}]},
@@ -40,7 +51,7 @@ async def send_to_agent(
         "Content-Type": "application/json",
     }
 
-    logging.info(f"Sending message to agent for app {whatsapp_config.agent_app_name}")
+    logging.info(f"Sending message to agent {target_agent_name} for user {user_id}")
     logging.info(f"Agent payload: {payload}")
     logging.info(f"Agent URL: {agent_run_url}")
     async with httpx.AsyncClient(timeout=30.0) as client:
@@ -63,13 +74,14 @@ async def _session_exists(
     user_id: str,
     whatsapp_config: WhatsAppConfig,
     session_id: str,
-    headers: dict
+    headers: dict,
+    agent_name: Optional[str] = None
 ) -> bool:
     """
     Check if a session already exists for the user.
     """
     try:
-        check_url = whatsapp_config.get_agent_session_url(user_id, session_id)
+        check_url = whatsapp_config.get_agent_session_url(user_id, session_id, agent_name)
         if not check_url:
             logging.error(f"Could not generate session check URL for user {user_id}")
             return False
@@ -99,14 +111,15 @@ async def _session_exists(
         return False
 
 
-async def create_agent_session(user_id: str, app_name: str, session_id: str) -> dict[str, Any]:
+async def create_agent_session(user_id: str, app_type: AppType, session_id: str, agent_name: Optional[str] = None) -> dict[str, Any]:
     """
     Creates a session for the user in the agent service if it doesn't already exist.
     
     Args:
         user_id: User WhatsApp ID
-        app_name: Application name (AA, PP, etc.)
+        app_type: Application type (AA or PP)
         session_id: Session identifier
+        agent_name: Specific agent name to use (overrides config default)
         
     Returns:
         Session data from the API response
@@ -116,11 +129,13 @@ async def create_agent_session(user_id: str, app_name: str, session_id: str) -> 
     
     logging.info(f"Starting session creation process for user {user_id}")
     
-    # Map app name to app type
-    app_type = AppType.AA if app_name == "AA" else AppType.PP
+    # Get the appropriate WhatsApp config
     whatsapp_config = config.get_whatsapp_config(app_type)
     
-    logging.debug(f"Agent configuration loaded for app {whatsapp_config.agent_app_name}")
+    # Use provided agent name or fall back to config default
+    target_agent_name = agent_name or whatsapp_config.agent_app_name
+    
+    logging.debug(f"Agent configuration loaded for agent {target_agent_name}")
     
     try:
         id_token = await get_id_token(config.agent.url)
@@ -129,11 +144,11 @@ async def create_agent_session(user_id: str, app_name: str, session_id: str) -> 
             "Content-Type": "application/json"
         }
         
-        # Check if session already exists
-        if await _session_exists(user_id, whatsapp_config, session_id, headers):
-            logging.info(f"Session already exists for user {user_id}, skipping creation")
+        # Check if session already exists using the specific agent name
+        if await _session_exists(user_id, whatsapp_config, session_id, headers, target_agent_name):
+            logging.info(f"Session already exists for user {user_id} with agent {target_agent_name}, skipping creation")
             # Get existing session data
-            get_url = whatsapp_config.get_agent_session_url(user_id, session_id)
+            get_url = whatsapp_config.get_agent_session_url(user_id, session_id, target_agent_name)
             if get_url:
                 async with httpx.AsyncClient(timeout=30.0) as client:
                     response = await client.get(get_url, headers=headers)
@@ -150,10 +165,10 @@ async def create_agent_session(user_id: str, app_name: str, session_id: str) -> 
             }
         }
 
-        logging.info(f"Creating new session for user {user_id}")
+        logging.info(f"Creating new session for user {user_id} with agent {target_agent_name}")
         
         # Make POST request to create session
-        create_url = whatsapp_config.get_agent_session_url(user_id, session_id)
+        create_url = whatsapp_config.get_agent_session_url(user_id, session_id, target_agent_name)
         if create_url:
             logging.info(f"Session creation payload: {payload}")
             logging.info(f"Session creation URL: {create_url}")
@@ -161,11 +176,11 @@ async def create_agent_session(user_id: str, app_name: str, session_id: str) -> 
                 response = await client.post(create_url, headers=headers, json=payload)
                 response.raise_for_status()
                 
-                logging.info(f"Session created successfully for user {user_id}")
+                logging.info(f"Session created successfully for user {user_id} with agent {target_agent_name}")
                 return response.json()
         else:
             raise ValueError("Could not generate session creation URL")
         
     except Exception as e:
-        logging.error(f"Error during session creation for user {user_id}: {e}", exc_info=True)
+        logging.error(f"Error during session creation for user {user_id} with agent {target_agent_name}: {e}", exc_info=True)
         raise

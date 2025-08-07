@@ -136,12 +136,44 @@ class AppConfig:
         
         # Initialize sub-configurations
         self.agent = AgentConfig()
+        
+        # Initialize singleton WhatsApp configurations for both apps
+        self.whatsapp_aa = WhatsAppConfig(AppType.AA, self.agent)
+        self.whatsapp_pp = WhatsAppConfig(AppType.PP, self.agent)
     
     def get_whatsapp_config(self, app_type: Union[AppType, str]) -> WhatsAppConfig:
         """Get WhatsApp configuration for a specific app type."""
         if isinstance(app_type, str):
             app_type = AppType(app_type.lower())
-        return WhatsAppConfig(app_type, self.agent)
+        
+        # Return singleton instances
+        if app_type == AppType.AA:
+            return self.whatsapp_aa
+        elif app_type == AppType.PP:
+            return self.whatsapp_pp
+        else:
+            raise ValueError(f"Unknown app type: {app_type}")
+    
+    def get_whatsapp_config_by_agent_name(self, agent_name: str) -> WhatsAppConfig:
+        """Get WhatsApp configuration by agent name."""
+        if agent_name == "agent_aa_app":
+            return self.whatsapp_aa
+        elif agent_name == "agent_pp_app":
+            return self.whatsapp_pp
+        else:
+            raise ValueError(f"Unknown agent name: {agent_name}")
+    
+    def get_agent_name_for_app_type(self, app_type: Union[AppType, str]) -> str:
+        """Get the agent name for a specific app type."""
+        if isinstance(app_type, str):
+            app_type = AppType(app_type.lower())
+        
+        if app_type == AppType.AA:
+            return "agent_aa_app"
+        elif app_type == AppType.PP:
+            return "agent_pp_app"
+        else:
+            raise ValueError(f"Unknown app type: {app_type}")
     
     @property
     def is_development(self) -> bool:
@@ -152,6 +184,8 @@ class AppConfig:
         """Validate all configurations."""
         missing = []
         missing.extend(self.agent.validate())
+        missing.extend(self.whatsapp_aa.validate())
+        missing.extend(self.whatsapp_pp.validate())
         return missing
 
 
