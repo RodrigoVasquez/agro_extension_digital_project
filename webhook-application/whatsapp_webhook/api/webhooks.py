@@ -72,7 +72,7 @@ async def verify_aa_webhook(
 @router.post("/estandar_aa_webhook", response_model=WebhookSuccessResponse)
 async def handle_estandar_aa_webhook(request: Request):
     """Handle incoming AA webhook messages."""
-    return await handle_webhook_post(AppType.AA, request)
+    return await _handle_webhook_post(AppType.AA, request)
 
 
 # PP Webhook endpoints  
@@ -89,4 +89,4 @@ async def verify_pp_webhook(
 @router.post("/estandar_pp_webhook", response_model=WebhookSuccessResponse)
 async def handle_estandar_pp_webhook(request: Request):
     """Handle incoming PP webhook messages."""
-    return await handle_webhook_post(AppType.PP, request)
+    return await _handle_webhook_post(AppType.PP, request)
