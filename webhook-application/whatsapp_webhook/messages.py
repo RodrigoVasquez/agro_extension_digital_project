@@ -85,7 +85,7 @@ async def _send_whatsapp_acknowledgment(
     
     try:
         logger.debug(f"Sending POST to: {whatsapp_config.api_url}")
-        resp = requests.post(whatsapp_config.api_url, headers=headers, json=outgoing_message.model_dump())
+        resp = requests.post(f"{whatsapp_config.api_url}/messages", headers=headers, json=outgoing_message.model_dump())
         resp.raise_for_status()
         logger.info(f"Acknowledgment sent successfully to {user_wa_id}")
         return True
