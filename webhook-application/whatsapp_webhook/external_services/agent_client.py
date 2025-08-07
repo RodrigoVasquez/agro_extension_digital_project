@@ -41,6 +41,8 @@ async def send_to_agent(
     }
 
     logging.info(f"Sending message to agent for app {whatsapp_config.agent_app_name}")
+    logging.info(f"Agent payload: {payload}")
+    logging.info(f"Agent URL: {agent_run_url}")
     async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.post(agent_run_url, json=payload, headers=headers)
         response.raise_for_status()
@@ -153,6 +155,8 @@ async def create_agent_session(user_id: str, app_name: str, session_id: str) -> 
         # Make POST request to create session
         create_url = whatsapp_config.get_agent_session_url(user_id, session_id)
         if create_url:
+            logging.info(f"Session creation payload: {payload}")
+            logging.info(f"Session creation URL: {create_url}")
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.post(create_url, headers=headers, json=payload)
                 response.raise_for_status()
