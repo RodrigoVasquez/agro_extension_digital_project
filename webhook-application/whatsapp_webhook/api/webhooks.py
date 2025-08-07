@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from typing import Optional
 import json
 
-from ..models.api_models import WebhookSuccessResponse
+from ..models.api_models import WebhookSuccessResponse, WebhookVerificationResponse
 from ..utils.app_config import AppType, config
 from ..utils.logging import get_logger
 from ..messages import receive_message_aa, receive_message_pp

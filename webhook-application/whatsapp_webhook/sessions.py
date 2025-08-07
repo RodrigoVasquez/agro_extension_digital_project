@@ -3,7 +3,7 @@ import os
 import json
 from .auth.google_auth import idtoken_from_metadata_server
 from .utils.logging import get_logger
-from .utils.config import get_agent_app_name
+from .utils.app_config import config, AppType
 
 APP_URL = os.getenv("APP_URL")  # Default to localhost if not set
 
@@ -54,7 +54,9 @@ def create_session(user: str, app_name: str, session_id: str):
     logger = get_logger("sessions", {"app_name": app_name})
     
     # Mapear nombre de app a nombre esperado por el agente
-    agent_app_name = get_agent_app_name(app_name)
+    app_type = AppType.AA if app_name == "AA" else AppType.PP
+    webhook_config = config.get_webhook_config(app_type)
+    agent_app_name = webhook_config.agent_app_name
     
     try:
         token = idtoken_from_metadata_server(APP_URL)
