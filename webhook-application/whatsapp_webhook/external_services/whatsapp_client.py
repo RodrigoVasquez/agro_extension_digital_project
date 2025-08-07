@@ -49,12 +49,18 @@ def create_document_message(media_id: str, filename: str, caption: Optional[str]
 async def download_whatsapp_media(media_id: str, whatsapp_api_url: str, token: str) -> Optional[bytes]:
     """Downloads media content from WhatsApp using the media ID."""
     headers = {"Authorization": f"Bearer {token}"}
-    media_url_endpoint = f"{whatsapp_api_url}/{media_id}"
+    
+    # Construir la URL correcta para obtener información del media
+    # La URL base debe ser algo como: https://graph.facebook.com/v18.0/PHONE_NUMBER_ID/
+    # Y el endpoint para media es: https://graph.facebook.com/v18.0/MEDIA_ID
+    base_url = whatsapp_api_url.replace('/messages', '')  # Remover /messages del final
+    media_url_endpoint = f"{base_url.rstrip('/')}/{media_id}"
     
     logging.info(f"Getting media URL for ID: {media_id} from endpoint: {media_url_endpoint}")
     
     async with httpx.AsyncClient(timeout=30.0) as client:
         try:
+            # Primero obtener la información del media incluyendo la URL de descarga
             media_response = await client.get(media_url_endpoint, headers=headers)
             media_response.raise_for_status()
             media_info = media_response.json()
@@ -63,12 +69,19 @@ async def download_whatsapp_media(media_id: str, whatsapp_api_url: str, token: s
                 logging.error(f"No URL found in media response: {media_info}")
                 return None
             
-            media_content_response = await client.get(media_info["url"], headers=headers)
+            # Descargar el contenido del media usando la URL proporcionada
+            download_url = media_info["url"]
+            logging.info(f"Downloading media content from: {download_url}")
+            
+            media_content_response = await client.get(download_url, headers=headers)
             media_content_response.raise_for_status()
             
             logging.info(f"Media downloaded successfully, size: {len(media_content_response.content)} bytes")
             return media_content_response.content
             
+        except httpx.HTTPStatusError as e:
+            logging.error(f"HTTP error downloading media {media_id}: {e.response.status_code} - {e.response.text}")
+            return None
         except Exception as e:
             logging.error(f"Error downloading media {media_id}: {e}, endpoint: {media_url_endpoint}", exc_info=True)
             return None
