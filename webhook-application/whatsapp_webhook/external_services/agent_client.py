@@ -21,8 +21,10 @@ async def send_to_agent(
     if not config.agent.url:
         raise ValueError("Agent URL is not configured.")
 
-    # Get the complete agent URL with the app-specific path
-    agent_url = whatsapp_config.get_agent_url(config.agent.url)
+    # Get the complete agent run URL
+    agent_run_url = whatsapp_config.get_agent_run_url()
+    if not agent_run_url:
+        raise ValueError("Agent run URL is not configured.")
 
     payload = {
         "app_name": whatsapp_config.agent_app_name,
@@ -40,7 +42,7 @@ async def send_to_agent(
 
     logging.info(f"Sending message to agent for app {whatsapp_config.agent_app_name}")
     async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(f"{agent_url}/run", json=payload, headers=headers)
+        response = await client.post(agent_run_url, json=payload, headers=headers)
         response.raise_for_status()
         response_data = response.json()
 
