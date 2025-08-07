@@ -20,7 +20,7 @@ async def send_whatsapp_message(
     
     logging.info(f"Sending WhatsApp message to {to}")
     async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(f"{whatsapp_api_url}/messages", json=payload, headers=headers)
+        response = await client.post(whatsapp_api_url, json=payload, headers=headers)
         response.raise_for_status()
         result = response.json()
         logging.info(f"WhatsApp message sent successfully: {result}")

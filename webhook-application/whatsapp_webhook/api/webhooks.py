@@ -8,7 +8,7 @@ from typing import Optional
 import json
 
 from ..models.api_models import WebhookSuccessResponse, WebhookVerificationResponse
-from ..utils.app_config import AppType, config
+from ..utils.app_config import AppType, config, WhatsAppConfig
 from ..utils.logging import get_logger
 from ..messages import receive_message_aa, receive_message_pp
 

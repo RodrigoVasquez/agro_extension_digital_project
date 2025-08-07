@@ -3,9 +3,7 @@ import os
 import json
 from .auth.google_auth import idtoken_from_metadata_server
 from .utils.logging import get_logger
-from .utils.app_config import config, AppType
-
-APP_URL = os.getenv("APP_URL")  # Default to localhost if not set
+from .utils.app_config import config, AppType, WhatsAppConfig
 
 def _session_exists(user: str, agent_app_name: str, session_id: str, headers: dict) -> bool:
     """
@@ -21,7 +19,7 @@ def _session_exists(user: str, agent_app_name: str, session_id: str, headers: di
         True if session exists, False otherwise
     """
     try:
-        check_url = f"{APP_URL}/apps/{agent_app_name}/users/{user}/sessions/{session_id}"
+        check_url = f"{config.agent.url}/apps/{agent_app_name}/users/{user}/sessions/{session_id}"
         response = requests.get(check_url, headers=headers)
         
         # If we get a 200 response, the session exists
@@ -55,11 +53,11 @@ def create_session(user: str, app_name: str, session_id: str):
     
     # Mapear nombre de app a nombre esperado por el agente
     app_type = AppType.AA if app_name == "AA" else AppType.PP
-    webhook_config = config.get_webhook_config(app_type)
-    agent_app_name = webhook_config.agent_app_name
+    whatsapp_config = config.get_whatsapp_config(app_type)
+    agent_app_name = whatsapp_config.agent_app_name
     
     try:
-        token = idtoken_from_metadata_server(APP_URL)
+        token = idtoken_from_metadata_server(config.agent.url)
         
         # Headers
         headers = {
@@ -75,7 +73,7 @@ def create_session(user: str, app_name: str, session_id: str):
                 "agent_app_name": agent_app_name
             })
             # Get existing session data
-            get_url = f"{APP_URL}/apps/{agent_app_name}/users/{user}/sessions/{session_id}"
+            get_url = f"{config.agent.url}/apps/{agent_app_name}/users/{user}/sessions/{session_id}"
             response = requests.get(get_url, headers=headers)
             response.raise_for_status()
             return response.json()
@@ -99,7 +97,7 @@ def create_session(user: str, app_name: str, session_id: str):
         })
         
         # Make POST request to create session
-        create_url = f"{APP_URL}/apps/{agent_app_name}/users/{user}/sessions/{session_id}"
+        create_url = f"{config.agent.url}/apps/{agent_app_name}/users/{user}/sessions/{session_id}"
         response = requests.post(create_url, headers=headers, json=payload)
         response.raise_for_status()
         
