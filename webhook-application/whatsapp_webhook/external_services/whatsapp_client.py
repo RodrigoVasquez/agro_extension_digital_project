@@ -50,16 +50,29 @@ async def download_whatsapp_media(media_id: str, whatsapp_api_url: str, token: s
     """Downloads media content from WhatsApp using the media ID."""
     headers = {"Authorization": f"Bearer {token}"}
     
-    # First, get the media URL
-    media_url_endpoint = f"{whatsapp_api_url.replace('/messages', '')}/{media_id}"
+    # Extract base URL and construct media endpoint
+    # whatsapp_api_url is typically: https://graph.facebook.com/v18.0/PHONE_NUMBER_ID/messages
+    # We need: https://graph.facebook.com/v18.0/MEDIA_ID
+    base_url = whatsapp_api_url.split('/messages')[0]  # Remove /messages
+    # Remove the phone number part to get the graph API base
+    api_parts = base_url.split('/')
+    if len(api_parts) >= 4:  # https://graph.facebook.com/v18.0/PHONE_NUMBER_ID
+        graph_base = '/'.join(api_parts[:-1])  # https://graph.facebook.com/v18.0
+        media_url_endpoint = f"{graph_base}/{media_id}"
+    else:
+        logging.error(f"Cannot parse WhatsApp API URL: {whatsapp_api_url}")
+        return None
     
-    logging.info(f"Getting media URL for ID: {media_id}")
+    logging.info(f"Getting media URL for ID: {media_id} from endpoint: {media_url_endpoint}")
+    
     async with httpx.AsyncClient(timeout=30.0) as client:
         try:
             # Get media info
             media_response = await client.get(media_url_endpoint, headers=headers)
             media_response.raise_for_status()
             media_info = media_response.json()
+            
+            logging.info(f"Media info response: {media_info}")
             
             if "url" not in media_info:
                 logging.error(f"No URL found in media response: {media_info}")
@@ -73,5 +86,5 @@ async def download_whatsapp_media(media_id: str, whatsapp_api_url: str, token: s
             return media_content_response.content
             
         except Exception as e:
-            logging.error(f"Error downloading media {media_id}: {e}", exc_info=True)
+            logging.error(f"Error downloading media {media_id}: {e}, endpoint: {media_url_endpoint}", exc_info=True)
             return None
