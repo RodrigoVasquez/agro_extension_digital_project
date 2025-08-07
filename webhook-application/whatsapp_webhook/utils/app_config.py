@@ -4,12 +4,6 @@ Simplified and centralized configuration management for the WhatsApp webhook app
 
 import os
 from pydantic import BaseModel
-from enum import Enum
-
-class AppType(Enum):
-    """Application types for webhook handling."""
-    AA = "aa"
-    PP = "pp"
 
 class AppConfig(BaseModel):
     """Main application configuration, loaded directly from environment variables."""

@@ -10,7 +10,7 @@ from .external_services.whatsapp_client import (
 )
 from .models.messages import WhatsAppWebhookPayload
 from .transcription import transcribe_audio_file
-from .utils.app_config import AppType, config
+from .utils.app_config import config
 from .utils.logging import get_logger
 from .utils.model_utils import parse_webhook_payload
 
@@ -40,16 +40,24 @@ async def _send_whatsapp_acknowledgment(
 ) -> bool:
     """Send acknowledgment message to WhatsApp user."""
     logger = get_logger("whatsapp_ack", {"app_name": app_name})
-    app_config = config.aa if app_name == "AA" else config.pp
+    
+    # Get the appropriate configuration based on app name
+    if app_name == config.aa_app_name:
+        facebook_app_url = config.aa_facebook_app_url
+    elif app_name == config.pp_app_name:
+        facebook_app_url = config.pp_facebook_app_url
+    else:
+        logger.error(f"Unknown app name: {app_name}")
+        return False
 
-    if not app_config.facebook_app_url or not app_config.wsp_token:
+    if not facebook_app_url or not config.wsp_token:
         logger.error("WhatsApp API URL or token is not configured.")
         return False
 
     try:
         message = create_text_message(message_text)
         await send_whatsapp_message(
-            user_wa_id, message, f"{app_config.facebook_app_url}/messages", app_config.wsp_token
+            user_wa_id, message, f"{facebook_app_url}/messages", config.wsp_token
         )
         logger.info(f"Acknowledgment sent successfully to {user_wa_id}")
         return True
@@ -57,7 +65,7 @@ async def _send_whatsapp_acknowledgment(
         logger.error(f"Failed to send acknowledgment: {e}", exc_info=True)
         return False
 
-async def _process_webhook_in_background(body: dict, app_type: AppType) -> None:
+async def _process_webhook_in_background(body: dict, app_name: str) -> None:
     """Process webhook in the background after sending an ACK."""
     webhook_payload = parse_webhook_payload(body)
     if not webhook_payload:
@@ -66,47 +74,46 @@ async def _process_webhook_in_background(body: dict, app_type: AppType) -> None:
 
     for sender_wa_id, message in webhook_payload.get_all_messages():
         try:
-            await process_message(sender_wa_id, message, app_type)
+            await process_message(sender_wa_id, message, app_name)
         except Exception as e:
             logging.error(f"Error processing message {message.id}: {e}", exc_info=True)
             await _send_whatsapp_acknowledgment(
-                sender_wa_id, "Error procesando mensaje.", app_type.value
+                sender_wa_id, "Error procesando mensaje.", app_name
             )
 
-async def process_incoming_webhook_payload(body: dict, app_type: AppType) -> bool:
+async def process_incoming_webhook_payload(body: dict, app_name: str) -> bool:
     """Core logic to process incoming webhook events from WhatsApp."""
-    logging.info(f"Received webhook for {app_type.value} - sending immediate ACK.")
-    asyncio.create_task(_process_webhook_in_background(body, app_type))
+    logging.info(f"Received webhook for {app_name} - sending immediate ACK.")
+    asyncio.create_task(_process_webhook_in_background(body, app_name))
     return True
 
 async def receive_message_aa(body: dict) -> bool:
     """Handles incoming messages for the AA application."""
-    return await process_incoming_webhook_payload(body, AppType.AA)
+    return await process_incoming_webhook_payload(body, config.aa_app_name)
 
 async def receive_message_pp(body: dict) -> bool:
     """Handles incoming messages for the PP application."""
-    return await process_incoming_webhook_payload(body, AppType.PP)
+    return await process_incoming_webhook_payload(body, config.pp_app_name)
 
 async def process_message(
-    sender_wa_id: str, message: "WhatsAppMessage", app_type: AppType
+    sender_wa_id: str, message: "WhatsAppMessage", app_name: str
 ) -> None:
     """Processes a single message from WhatsApp."""
     if message.type == "text":
-        await _process_single_text_message(sender_wa_id, message, app_type)
+        await _process_single_text_message(sender_wa_id, message, app_name)
     elif message.type == "audio" and message.audio:
-        await handle_audio_message(sender_wa_id, message.audio.id, app_type)
+        await handle_audio_message(sender_wa_id, message.audio.id, app_name)
     else:
         await _send_whatsapp_acknowledgment(
             sender_wa_id,
             "Solo puedo procesar mensajes de texto y audio. ¿En qué puedo ayudarte?",
-            app_type.value,
+            app_name,
         )
 
 async def _process_single_text_message(
-    sender_wa_id: str, message: "WhatsAppMessage", app_type: AppType
+    sender_wa_id: str, message: "WhatsAppMessage", app_name: str
 ) -> None:
     """Process a single text message from WhatsApp."""
-    app_name = app_type.value
     await create_agent_session(sender_wa_id, app_name, sender_wa_id)
     message_text = message.get_message_content() or ""
     agent_response = await send_message_to_agent(
@@ -116,37 +123,42 @@ async def _process_single_text_message(
     await _send_whatsapp_acknowledgment(sender_wa_id, response_text, app_name)
 
 async def handle_audio_message(
-    phone: str, audio_id: str, app_type: AppType
+    phone: str, audio_id: str, app_name: str
 ) -> None:
     """Processes an audio message: downloads, transcribes, and responds."""
-    app_config = config.aa if app_type == AppType.AA else config.pp
-    api_url = app_config.facebook_app_url
-    token = app_config.wsp_token
+    # Get the appropriate configuration based on app name
+    if app_name == config.aa_app_name:
+        facebook_app_url = config.aa_facebook_app_url
+    elif app_name == config.pp_app_name:
+        facebook_app_url = config.pp_facebook_app_url
+    else:
+        logging.error(f"Unknown app name: {app_name}")
+        return
 
-    if not api_url or not token:
+    if not facebook_app_url or not config.wsp_token:
         logging.error(
-            f"Incomplete WhatsApp config for audio in {app_config.app_name}"
+            f"Incomplete WhatsApp config for audio in {app_name}"
         )
         return
 
     try:
-        audio_content = await download_whatsapp_media(audio_id, api_url, token)
+        audio_content = await download_whatsapp_media(audio_id, facebook_app_url, config.wsp_token)
         if not audio_content:
             await send_whatsapp_message(
-                phone, create_text_message("No pude descargar tu audio."), f"{api_url}/messages", token
+                phone, create_text_message("No pude descargar tu audio."), f"{facebook_app_url}/messages", config.wsp_token
             )
             return
 
         transcript = await transcribe_audio_file(audio_content)
         if not transcript:
             await send_whatsapp_message(
-                phone, create_text_message("No pude entender tu audio."), f"{api_url}/messages", token
+                phone, create_text_message("No pude entender tu audio."), f"{facebook_app_url}/messages", config.wsp_token
             )
             return
 
-        response = await send_message_to_agent(phone, app_type.value, phone, transcript)
+        response = await send_message_to_agent(phone, app_name, phone, transcript)
         await send_whatsapp_message(
-            phone, create_text_message(response), f"{api_url}/messages", token
+            phone, create_text_message(response), f"{facebook_app_url}/messages", config.wsp_token
         )
     except Exception as e:
         logging.error(f"Error processing audio: {e}", exc_info=True)
