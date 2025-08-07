@@ -5,13 +5,13 @@ from .auth.google_auth import idtoken_from_metadata_server
 from .utils.logging import get_logger
 from .utils.app_config import config, AppType, WhatsAppConfig
 
-def _session_exists(user: str, agent_app_name: str, session_id: str, headers: dict) -> bool:
+def _session_exists(user: str, whatsapp_config: WhatsAppConfig, session_id: str, headers: dict) -> bool:
     """
     Check if a session already exists for the user.
     
     Args:
         user: User WhatsApp ID
-        agent_app_name: Mapped agent application name
+        whatsapp_config: WhatsApp configuration containing agent info
         session_id: Session identifier
         headers: Request headers with authorization
         
@@ -19,7 +19,10 @@ def _session_exists(user: str, agent_app_name: str, session_id: str, headers: di
         True if session exists, False otherwise
     """
     try:
-        check_url = f"{config.agent.url}/apps/{agent_app_name}/users/{user}/sessions/{session_id}"
+        check_url = whatsapp_config.get_agent_session_url(user, session_id)
+        if not check_url:
+            return False
+            
         response = requests.get(check_url, headers=headers)
         
         # If we get a 200 response, the session exists
@@ -54,7 +57,6 @@ def create_session(user: str, app_name: str, session_id: str):
     # Mapear nombre de app a nombre esperado por el agente
     app_type = AppType.AA if app_name == "AA" else AppType.PP
     whatsapp_config = config.get_whatsapp_config(app_type)
-    agent_app_name = whatsapp_config.agent_app_name
     
     try:
         token = idtoken_from_metadata_server(config.agent.url)
@@ -66,15 +68,16 @@ def create_session(user: str, app_name: str, session_id: str):
         }
         
         # Check if session already exists
-        if _session_exists(user, agent_app_name, session_id, headers):
+        if _session_exists(user, whatsapp_config, session_id, headers):
             logger.info("Session already exists, skipping creation", extra={
                 "user_id": user, 
                 "session_id": session_id,
-                "agent_app_name": agent_app_name
+                "agent_app_name": whatsapp_config.agent_app_name
             })
             # Get existing session data
-            get_url = f"{config.agent.url}/apps/{agent_app_name}/users/{user}/sessions/{session_id}"
-            response = requests.get(get_url, headers=headers)
+            get_url = whatsapp_config.get_agent_session_url(user, session_id)
+            if get_url:
+                response = requests.get(get_url, headers=headers)
             response.raise_for_status()
             return response.json()
 
@@ -92,17 +95,20 @@ def create_session(user: str, app_name: str, session_id: str):
         logger.info(f"Creating new session for user", extra={
             "user_id": user, 
             "session_id": session_id,
-            "agent_app_name": agent_app_name,
+            "agent_app_name": whatsapp_config.agent_app_name,
             "session_url": session_url
         })
         
         # Make POST request to create session
-        create_url = f"{config.agent.url}/apps/{agent_app_name}/users/{user}/sessions/{session_id}"
-        response = requests.post(create_url, headers=headers, json=payload)
-        response.raise_for_status()
+        create_url = whatsapp_config.get_agent_session_url(user, session_id)
+        if create_url:
+            response = requests.post(create_url, headers=headers, json=payload)
+            response.raise_for_status()
         
-        logger.info("Session created successfully", extra={"user_id": user, "session_id": session_id})
-        return response.json()
+            logger.info("Session created successfully", extra={"user_id": user, "session_id": session_id})
+            return response.json()
+        else:
+            raise ValueError("Could not generate session URL")
         
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to create session: {e}", extra={"user_id": user, "session_id": session_id}, exc_info=True)

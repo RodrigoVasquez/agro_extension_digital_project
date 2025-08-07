@@ -20,11 +20,14 @@ if TYPE_CHECKING:
     from .models.messages import WhatsAppMessage
 
 
-def send_message(user: str, app_name: str, session_id: str, message: str) -> str:
+def send_message(user: str, whatsapp_config: WhatsAppConfig, session_id: str, message: str) -> str:
     """Sends a message to the internal agent service and parses the response."""
-    logger = get_logger("agent_communication", {"app_name": app_name})
+    logger = get_logger("agent_communication", {"app_name": whatsapp_config.agent_app_name})
     
-    if not config.agent.url:
+    # Get the complete agent run URL
+    agent_run_url = whatsapp_config.get_agent_run_url()
+    
+    if not agent_run_url:
         logger.error("Agent URL is not configured")
         return "Error: Servicio de agente no configurado (URL)."
 
@@ -35,7 +38,7 @@ def send_message(user: str, app_name: str, session_id: str, message: str) -> str
         return "Error: No se pudo autenticar con el servicio del agente."
 
     agent_request = create_agent_request(
-        app_name=app_name,
+        app_name=whatsapp_config.agent_app_name,
         user_id=user,
         session_id=session_id,
         message_text=message
@@ -47,7 +50,7 @@ def send_message(user: str, app_name: str, session_id: str, message: str) -> str
     }
     
     try:
-        response = requests.post(f"{config.agent.url}/run", headers=headers, json=agent_request.model_dump())
+        response = requests.post(agent_run_url, headers=headers, json=agent_request.model_dump())
         response.raise_for_status()
         extracted_text = parse_agent_response(response.json())
         return extracted_text or "Error: No se pudo extraer el texto de la respuesta."
@@ -104,7 +107,7 @@ async def _process_single_text_message(
     app_name = whatsapp_config.app_type.value
     create_session(sender_wa_id, app_name, sender_wa_id)
     message_text = message.get_message_content() or ""
-    agent_response = send_message(sender_wa_id, whatsapp_config.agent_app_name, sender_wa_id, message_text)
+    agent_response = send_message(sender_wa_id, whatsapp_config, sender_wa_id, message_text)
     response_text = agent_response or "No pude procesar tu mensaje. Intenta de nuevo."
     await _send_whatsapp_acknowledgment(sender_wa_id, response_text, whatsapp_config)
 
@@ -183,7 +186,7 @@ async def handle_audio_message(phone: str, audio_id: str, whatsapp_config: Whats
             await send_whatsapp_message(phone, create_text_message("No pude entender tu audio."), api_url, token)
             return
 
-        response = send_message(phone, whatsapp_config.agent_app_name, phone, transcript)
+        response = send_message(phone, whatsapp_config, phone, transcript)
         await send_whatsapp_message(phone, create_text_message(response), api_url, token)
     except Exception as e:
         logging.error(f"Error processing audio: {e}", exc_info=True)

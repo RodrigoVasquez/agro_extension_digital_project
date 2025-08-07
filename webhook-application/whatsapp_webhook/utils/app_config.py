@@ -4,7 +4,7 @@ Configuration management for WhatsApp webhook application.
 
 import os
 import logging
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict
 from enum import Enum
 
 
@@ -20,6 +20,33 @@ class AgentConfig:
     def __init__(self):
         self.url: Optional[str] = os.getenv("APP_URL")
         self.timeout: int = int(os.getenv("AGENT_TIMEOUT", "30"))
+        
+        # Agent mapping configuration
+        self.agent_paths = {
+            "agent_aa_app": "/apps/agent_aa_app",
+            "agent_pp_app": "/apps/agent_pp_app"
+        }
+    
+    def get_agent_url(self, agent_name: str) -> Optional[str]:
+        """Get the complete URL for a specific agent."""
+        if not self.url:
+            return None
+        
+        agent_path = self.agent_paths.get(agent_name)
+        if not agent_path:
+            return None
+            
+        return f"{self.url}{agent_path}"
+    
+    def get_all_agent_urls(self) -> Dict[str, str]:
+        """Get URLs for all agents."""
+        if not self.url:
+            return {}
+        
+        return {
+            agent_name: f"{self.url}{path}"
+            for agent_name, path in self.agent_paths.items()
+        }
     
     def validate(self) -> List[str]:
         """Validate agent configuration."""
@@ -32,9 +59,10 @@ class AgentConfig:
 class WhatsAppConfig:
     """Configuration for WhatsApp webhook and API."""
     
-    def __init__(self, app_type: AppType):
+    def __init__(self, app_type: AppType, agent_config: AgentConfig):
         self.app_type = app_type
         self._app_suffix = app_type.value.upper()
+        self._agent_config = agent_config
         
         # WhatsApp API configuration
         self.api_url: Optional[str] = os.getenv(f"ESTANDAR_{self._app_suffix}_FACEBOOK_APP")
@@ -62,6 +90,29 @@ class WhatsAppConfig:
             "PP": "agent_pp_app"
         }
         return mapping.get(self._app_suffix, self._app_suffix.lower())
+    
+    def get_agent_url(self, agent_name: Optional[str] = None) -> Optional[str]:
+        """Get the complete agent URL with the app-specific path."""
+        target_agent = agent_name or self.agent_app_name
+        return self._agent_config.get_agent_url(target_agent)
+    
+    def get_agent_run_url(self, agent_name: Optional[str] = None) -> Optional[str]:
+        """Get the complete agent run endpoint URL."""
+        agent_url = self.get_agent_url(agent_name)
+        return f"{agent_url}/run" if agent_url else None
+    
+    def get_agent_session_url(self, user_id: str, session_id: str, agent_name: Optional[str] = None) -> Optional[str]:
+        """Get the complete agent session endpoint URL."""
+        agent_url = self.get_agent_url(agent_name)
+        return f"{agent_url}/users/{user_id}/sessions/{session_id}" if agent_url else None
+    
+    def get_all_agent_urls(self) -> Dict[str, str]:
+        """Get URLs for all available agents."""
+        return self._agent_config.get_all_agent_urls()
+    
+    def can_route_to_agent(self, agent_name: str) -> bool:
+        """Check if this config can route to a specific agent."""
+        return agent_name in self._agent_config.agent_paths
     
     def validate(self) -> List[str]:
         """Validate WhatsApp configuration."""
@@ -94,7 +145,7 @@ class AppConfig:
         """Get WhatsApp configuration for a specific app type."""
         if isinstance(app_type, str):
             app_type = AppType(app_type.lower())
-        return WhatsAppConfig(app_type)
+        return WhatsAppConfig(app_type, self.agent)
     
     @property
     def is_development(self) -> bool:

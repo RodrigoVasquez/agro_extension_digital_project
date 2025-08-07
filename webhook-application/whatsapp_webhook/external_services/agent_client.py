@@ -6,11 +6,11 @@ import logging
 from typing import Any, Optional
 
 from ..auth.google_auth import get_id_token
-from ..utils.app_config import config
+from ..utils.app_config import config, WhatsAppConfig
 
 
 async def send_to_agent(
-    app_name: str,
+    whatsapp_config: WhatsAppConfig,
     user_id: str,
     session_id: str,
     message: str,
@@ -21,8 +21,11 @@ async def send_to_agent(
     if not config.agent.url:
         raise ValueError("Agent URL is not configured.")
 
+    # Get the complete agent URL with the app-specific path
+    agent_url = whatsapp_config.get_agent_url(config.agent.url)
+
     payload = {
-        "app_name": app_name,
+        "app_name": whatsapp_config.agent_app_name,
         "user_id": user_id,
         "session_id": session_id,
         "new_message": {"role": "user", "parts": [{"text": message}]},
@@ -35,9 +38,9 @@ async def send_to_agent(
         "Content-Type": "application/json",
     }
 
-    logging.info(f"Sending message to agent for app {app_name}")
+    logging.info(f"Sending message to agent for app {whatsapp_config.agent_app_name}")
     async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(f"{config.agent.url}/run", json=payload, headers=headers)
+        response = await client.post(f"{agent_url}/run", json=payload, headers=headers)
         response.raise_for_status()
         response_data = response.json()
 
