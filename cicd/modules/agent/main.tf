@@ -1,6 +1,34 @@
 resource "google_service_account" "agent_aa_app" {
     account_id   = var.service_account_id_agent_aa
-    display_name = var.service_account_display_name_agent_aa
+    disp      startup_probe {
+        http_get {
+          path = "/health"
+          port = 8080
+        }
+              startup_probe {
+        http_get {
+          path = "/health"
+          port = 8080
+        }
+        initial_delay_seconds = 10
+        timeout_seconds      = 5
+        period_seconds       = 10
+        failure_threshold    = 3
+      }
+
+      liveness_probe {
+        http_get {
+          path = "/health"
+          port = 8080econds = 15
+        timeout_seconds      = 10
+        period_seconds       = 10
+        failure_threshold    = 5
+      }
+
+      liveness_probe {
+        http_get {
+          path = "/health"
+          port = 8080service_account_display_name_agent_aa
     project = var.project_id
 }
 
@@ -110,7 +138,7 @@ resource "google_cloud_run_v2_service" "cloud_run_name_agent_aa" {
 
       startup_probe {
         http_get {
-          path = "/health"
+          path = "/ping"
           port = 8080
         }
         initial_delay_seconds = 15
@@ -121,7 +149,7 @@ resource "google_cloud_run_v2_service" "cloud_run_name_agent_aa" {
 
       liveness_probe {
         http_get {
-          path = "/health"
+          path = "/ping"
           port = 8080
         }
         initial_delay_seconds = 60
@@ -204,7 +232,7 @@ resource "google_cloud_run_v2_service" "cloud_run_name_webhook" {
 
       startup_probe {
         http_get {
-          path = "/health"
+          path = "/ping"
           port = 8080
         }
         initial_delay_seconds = 10
@@ -215,7 +243,7 @@ resource "google_cloud_run_v2_service" "cloud_run_name_webhook" {
 
       liveness_probe {
         http_get {
-          path = "/health"
+          path = "/ping"
           port = 8080
         }
         initial_delay_seconds = 30
