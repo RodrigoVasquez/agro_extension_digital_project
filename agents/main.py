@@ -21,6 +21,17 @@ app: FastAPI = get_fast_api_app(
     web=SERVE_WEB_INTERFACE,
 )
 
+# Health check endpoint for Cloud Run optimization
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Cloud Run startup and liveness probes"""
+    return {
+        "status": "healthy",
+        "service": "agent",
+        "version": "1.0.0",
+        "environment": os.environ.get("ENVIRONMENT", "unknown")
+    }
+
 # You can add more FastAPI routes or configurations below if needed
 # Example:
 # @app.get("/hello")
