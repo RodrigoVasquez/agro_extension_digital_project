@@ -47,6 +47,15 @@ inputs = {
   whatsapp_base_url = "https://graph.facebook.com/v22.0"
   log_level = "DEBUG"  # Development environment uses DEBUG level for detailed logging
   bigquery_dataset = "sandbox_rsolar"  # BigQuery dataset for development environment
+  
+  # Performance optimizations for dev (cost-effective settings)
+  cpu_limit_agent = "1"
+  memory_limit_agent = "2Gi"
+  cpu_limit_webhook = "1"
+  memory_limit_webhook = "1Gi"
+  min_instances_agent_aa = 0  # Cost saving for dev
+  min_instances_webhook = 0   # Cost saving for dev
+  max_concurrency = 50        # Lower for dev
 }
 
 terraform {

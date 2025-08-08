@@ -147,6 +147,48 @@ variable "whatsapp_base_url" {
     default     = "https://graph.facebook.com/v22.0"
 }
 
+variable "cpu_limit_agent" {
+    description = "CPU limit for agent services"
+    type        = string
+    default     = "2"
+}
+
+variable "memory_limit_agent" {
+    description = "Memory limit for agent services"
+    type        = string
+    default     = "4Gi"
+}
+
+variable "cpu_limit_webhook" {
+    description = "CPU limit for webhook service"
+    type        = string
+    default     = "1"
+}
+
+variable "memory_limit_webhook" {
+    description = "Memory limit for webhook service"
+    type        = string
+    default     = "2Gi"
+}
+
+variable "min_instances_agent_aa" {
+    description = "Minimum instances for AA agent"
+    type        = number
+    default     = 1
+}
+
+variable "min_instances_webhook" {
+    description = "Minimum instances for webhook"
+    type        = number
+    default     = 1
+}
+
+variable "max_concurrency" {
+    description = "Maximum concurrent requests per instance"
+    type        = number
+    default     = 80
+}
+
 variable "log_level" {
     description = "Nivel de logging para la aplicación webhook (DEBUG, INFO, WARNING, ERROR, CRITICAL)"
     type        = string

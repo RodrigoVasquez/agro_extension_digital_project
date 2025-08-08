@@ -57,6 +57,15 @@ inputs = {
   whatsapp_base_url = "https://graph.facebook.com/v22.0"
   log_level = "INFO"  # Production environment uses INFO level for performance and log volume control
   bigquery_dataset = "agro_extension_digital_prd_dataset"  # BigQuery dataset for production environment
+  
+  # Performance optimizations for production (high-performance settings)
+  cpu_limit_agent = "2"
+  memory_limit_agent = "4Gi"
+  cpu_limit_webhook = "1"
+  memory_limit_webhook = "2Gi"
+  min_instances_agent_aa = 1  # Keep warm for production
+  min_instances_webhook = 1   # Keep warm for production
+  max_concurrency = 80        # Optimized for production
 }
 
 terraform {

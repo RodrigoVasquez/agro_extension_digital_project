@@ -4,6 +4,39 @@ WhatsApp API client utilities for sending messages and downloading media.
 import httpx
 import logging
 from typing import Any, Dict, Optional
+from contextlib import asynccontextmanager
+
+class WhatsAppClientPool:
+    """Pool de conexiones reutilizable para WhatsApp API - Optimización de performance"""
+    
+    def __init__(self):
+        self._client = None
+    
+    @asynccontextmanager
+    async def get_client(self):
+        if self._client is None:
+            self._client = httpx.AsyncClient(
+                timeout=httpx.Timeout(30.0),
+                limits=httpx.Limits(
+                    max_keepalive_connections=10,
+                    max_connections=50,
+                    keepalive_expiry=30.0
+                )
+            )
+        try:
+            yield self._client
+        finally:
+            # No cerrar el cliente, mantenerlo para reutilizar
+            pass
+    
+    async def close(self):
+        """Cerrar el cliente cuando sea necesario"""
+        if self._client:
+            await self._client.aclose()
+            self._client = None
+
+# Instancia global del pool para reutilización entre requests
+whatsapp_pool = WhatsAppClientPool()
 
 async def send_whatsapp_message(
     to: str,
@@ -11,7 +44,7 @@ async def send_whatsapp_message(
     whatsapp_api_url: str,
     token: str
 ) -> Dict[str, Any]:
-    """Sends a message via the WhatsApp API."""
+    """Sends a message via the WhatsApp API using optimized connection pool."""
     if not to.startswith("+"):
         to = f"+{to}"
     
@@ -19,7 +52,9 @@ async def send_whatsapp_message(
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
     
     logging.info(f"Sending WhatsApp message to {to}")
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    
+    # Usar el pool de conexiones global para mejor performance
+    async with whatsapp_pool.get_client() as client:
         response = await client.post(whatsapp_api_url, json=payload, headers=headers)
         response.raise_for_status()
         result = response.json()
@@ -47,7 +82,7 @@ def create_document_message(media_id: str, filename: str, caption: Optional[str]
     return message
 
 async def download_whatsapp_media(media_id: str, whatsapp_base_url: str, token: str) -> Optional[bytes]:
-    """Downloads media content from WhatsApp using the media ID."""
+    """Downloads media content from WhatsApp using the media ID with optimized connection pool."""
     headers = {"Authorization": f"Bearer {token}"}
     
     # Usar la URL base para obtener información del media
@@ -55,7 +90,8 @@ async def download_whatsapp_media(media_id: str, whatsapp_base_url: str, token: 
     
     logging.info(f"Getting media URL for ID: {media_id} from endpoint: {media_url_endpoint}")
     
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    # Usar el pool de conexiones global para mejor performance
+    async with whatsapp_pool.get_client() as client:
         try:
             # Primero obtener la información del media incluyendo la URL de descarga
             media_response = await client.get(media_url_endpoint, headers=headers)

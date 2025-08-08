@@ -1,9 +1,11 @@
 """
 Simplified and centralized configuration management for the WhatsApp webhook application.
+Optimized with caching for better performance.
 """
 
 import os
 from pydantic import BaseModel
+from functools import lru_cache
 
 class AppConfig(BaseModel):
     """Main application configuration, loaded directly from environment variables."""
@@ -22,8 +24,9 @@ class AppConfig(BaseModel):
     pp_facebook_app_url: str
     pp_app_name: str
 
+@lru_cache(maxsize=1)
 def load_config_from_env() -> AppConfig:
-    """Loads the application configuration from environment variables."""
+    """Loads the application configuration from environment variables with caching."""
     return AppConfig(
         agent_url=os.getenv("APP_URL"),
         log_level=os.getenv("LOG_LEVEL", "INFO"),

@@ -13,6 +13,7 @@ from .transcription import transcribe_audio_file
 from .utils.app_config import config
 from .utils.logging import get_logger
 from .utils.model_utils import parse_webhook_payload
+from .utils.temp_file_manager import temp_manager
 
 if TYPE_CHECKING:
     from .models.messages import WhatsAppMessage
@@ -78,9 +79,10 @@ async def _process_webhook_in_background(body: dict, app_name: str) -> None:
         except Exception as e:
             logging.error(f"Error processing message {message.id}: {e}", exc_info=True)
             await _send_whatsapp_acknowledgment(
-                sender_wa_id, "Error procesando mensaje.", app_name
-            )
+            sender_wa_id, "Error procesando mensaje.", app_name
+        )
 
+async def process_incoming_webhook_payload(body: dict, app_name: str) -> bool:@monitor_performance()
 async def process_incoming_webhook_payload(body: dict, app_name: str) -> bool:
     """Core logic to process incoming webhook events from WhatsApp."""
     logging.info(f"Received webhook for {app_name} - sending immediate ACK.")
