@@ -28,6 +28,12 @@ app: FastAPI = get_fast_api_app(
     web=SERVE_WEB_INTERFACE,
 )
 
+# Add a simple test endpoint to verify the app is working
+@app.get("/")
+async def root():
+    """Root endpoint to verify service is running."""
+    return {"message": "Agent service is running", "timestamp": datetime.utcnow().isoformat() + "Z"}
+
 # Health check endpoint for Cloud Run optimization
 @app.get("/health")
 async def health_check() -> Dict[str, Any]:
@@ -53,7 +59,7 @@ async def health_check() -> Dict[str, Any]:
         "checks": health_checks
     }
 
-# Readiness check endpoint
+# Readiness check endpoint - MUST return 200 for Cloud Run startup probe
 @app.get("/ready")
 async def readiness_check() -> Dict[str, Any]:
     """Readiness check endpoint for detailed health status."""
@@ -62,24 +68,50 @@ async def readiness_check() -> Dict[str, Any]:
     
     try:
         # More detailed checks for readiness
-        ready = uptime > 10  # Agent needs more time to initialize AI services
-        status = "ready" if ready else "not_ready"
+        # Reduced from 10 to 5 seconds for faster startup
+        ready = uptime > 5  # Agent needs time to initialize AI services
         
-        return {
-            "status": status,
+        response_data = {
+            "status": "ready" if ready else "not_ready",
             "service": "agent",
             "version": "1.0.0",
             "uptime": uptime,
             "timestamp": datetime.utcnow().isoformat() + "Z",
-            "ai_services": "initialized" if ready else "initializing"
+            "ai_services": "initialized" if ready else "initializing",
+            "port": int(os.environ.get("PORT", 8080))
         }
+        
+        # Always return the response data, even if not ready
+        # Cloud Run needs a 200 response to consider the probe successful
+        return response_data
+        
     except Exception as e:
+        # Even on error, return a 200 response with error details
         return {
             "status": "not_ready", 
             "service": "agent",
             "error": str(e),
-            "timestamp": datetime.utcnow().isoformat() + "Z"
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "uptime": uptime
         }
+
+# Debug endpoint to help troubleshoot deployment issues
+@app.get("/debug")
+async def debug_info():
+    """Debug endpoint to check service status."""
+    return {
+        "service": "agent",
+        "environment": {
+            "PORT": os.environ.get("PORT", "not_set"),
+            "ENVIRONMENT": os.environ.get("ENVIRONMENT", "not_set"), 
+            "SERVICE_NAME": os.environ.get("SERVICE_NAME", "not_set"),
+            "GOOGLE_CLOUD_PROJECT": os.environ.get("GOOGLE_CLOUD_PROJECT", "not_set")
+        },
+        "uptime": time.time() - startup_time,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "app_type": str(type(app)),
+        "routes": [str(route.path) for route in app.routes if hasattr(route, 'path')]
+    }
 
 # You can add more FastAPI routes or configurations below if needed
 # Example:

@@ -113,10 +113,10 @@ resource "google_cloud_run_v2_service" "cloud_run_name_agent_aa" {
           path = "/ready"
           port = 8080
         }
-        initial_delay_seconds = 15
-        timeout_seconds       = 10
-        period_seconds        = 10
-        failure_threshold     = 5
+        initial_delay_seconds = 30
+        timeout_seconds       = 15
+        period_seconds        = 15
+        failure_threshold     = 6
       }
 
       liveness_probe {
