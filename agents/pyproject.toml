@@ -11,5 +11,6 @@ dependencies = [
     "langgraph",
     "sqlalchemy-bigquery",
     "google-cloud-bigquery-storage",
-    "ipykernel"
+    "ipykernel",
+    "uvicorn>=0.34.2",
 ]

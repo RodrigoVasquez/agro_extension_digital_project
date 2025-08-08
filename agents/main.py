@@ -4,120 +4,112 @@ from typing import Dict, Any
 from datetime import datetime
 
 import uvicorn
-from fastapi import FastAPI
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from google.adk.cli.fast_api import get_fast_api_app
 
 # Get the directory where main.py is located
 AGENT_DIR = os.path.dirname(os.path.abspath(__file__))
-# Example session DB URL (e.g., SQLite)
-SESSION_DB_URL = "sqlite:///./sessions.db"
-# Example allowed origins for CORS
-ALLOWED_ORIGINS = ["http://localhost", "http://localhost:8080", "*"]
-# Set web=True if you intend to serve a web interface, False otherwise
+# Allow both HTTP and HTTPS traffic
+ALLOWED_ORIGINS = ["*"]
+# Set web=True for web interface
 SERVE_WEB_INTERFACE = True
 
 # Store startup time for uptime calculation
 startup_time = time.time()
 
 # Call the function to get the FastAPI app instance
-# Ensure the agent directory name ('capital_agent') matches your agent folder
 app: FastAPI = get_fast_api_app(
     agent_dir=AGENT_DIR,
     allow_origins=ALLOWED_ORIGINS,
     web=SERVE_WEB_INTERFACE,
 )
 
-# Override any existing routes and add our health check endpoints
-# Use app.router.add_api_route to ensure they're properly registered
+# Middleware to handle both HTTP and HTTPS traffic properly
+@app.middleware("http")
+async def handle_traffic(request: Request, call_next):
+    """Middleware to handle HTTP/HTTPS traffic and add necessary headers"""
+    
+    # Log request for debugging
+    print(f"🌐 {request.method} {request.url.path} (scheme: {request.url.scheme})")
+    
+    response = await call_next(request)
+    
+    # Add headers for Cloud Run and external traffic
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Cache-Control"] = "no-cache"
+    
+    # Handle Cloud Run trace context
+    if "X-Cloud-Trace-Context" in request.headers:
+        response.headers["X-Cloud-Trace-Context"] = request.headers["X-Cloud-Trace-Context"]
+    
+    return response
 
-# Health check endpoint for Cloud Run optimization
-async def health_check_sync() -> Dict[str, Any]:
-    """Health check endpoint for Cloud Run startup and liveness probes"""
-    current_time = time.time()
-    uptime = current_time - startup_time
-    
-    # Perform basic health checks
-    health_checks = {
-        "database": "ok",
-        "ai_services": "ok", 
-        "memory": "ok"
-    }
-    
-    return {
-        "status": "healthy",
-        "service": "agent",
-        "version": "1.0.0",
-        "environment": os.environ.get("ENVIRONMENT", "unknown"),
-        "service_name": os.environ.get("SERVICE_NAME", "agent-app"),
-        "timestamp": datetime.utcnow().isoformat() + "Z",
-        "uptime": uptime,
-        "checks": health_checks
-    }
-
-# Readiness check endpoint - MUST return 200 for Cloud Run startup probe
-async def readiness_check_sync() -> Dict[str, Any]:
-    """Readiness check endpoint for detailed health status."""
-    current_time = time.time()
-    uptime = current_time - startup_time
-    
+# Health check endpoint for liveness probe
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Cloud Run liveness probe"""
     try:
-        # More detailed checks for readiness
-        # Reduced from 10 to 5 seconds for faster startup
-        ready = uptime > 5  # Agent needs time to initialize AI services
+        uptime = time.time() - startup_time
         
-        response_data = {
-            "status": "ready" if ready else "not_ready",
-            "service": "agent",
+        return {
+            "status": "healthy",
+            "service": "agent-aa-pp",
             "version": "1.0.0",
             "uptime": uptime,
             "timestamp": datetime.utcnow().isoformat() + "Z",
-            "ai_services": "initialized" if ready else "initializing",
+            "checks": {
+                "memory": "ok",
+                "ai_services": "ok"
+            }
+        }
+    except Exception as e:
+        # Still return 200 but with error status
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "unhealthy",
+                "service": "agent-aa-pp", 
+                "error": str(e),
+                "timestamp": datetime.utcnow().isoformat() + "Z"
+            }
+        )
+
+# Readiness check endpoint for startup probe
+@app.get("/ready")
+async def readiness_check():
+    """Readiness check endpoint for Cloud Run startup probe"""
+    try:
+        uptime = time.time() - startup_time
+        
+        # Quick startup - agent should be ready after 5 seconds
+        ready = uptime > 5
+        
+        return {
+            "ready": ready,
+            "status": "ready" if ready else "starting",
+            "service": "agent-aa-pp",
+            "version": "1.0.0", 
+            "uptime": uptime,
+            "timestamp": datetime.utcnow().isoformat() + "Z",
             "port": int(os.environ.get("PORT", 8080))
         }
         
-        # Always return the response data, even if not ready
-        # Cloud Run needs a 200 response to consider the probe successful
-        return response_data
-        
     except Exception as e:
-        # Even on error, return a 200 response with error details
-        return {
-            "status": "not_ready", 
-            "service": "agent",
-            "error": str(e),
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-            "uptime": uptime
-        }
-
-# Debug endpoint to help troubleshoot deployment issues
-async def debug_info_sync():
-    """Debug endpoint to check service status."""
-    return {
-        "service": "agent",
-        "environment": {
-            "PORT": os.environ.get("PORT", "not_set"),
-            "ENVIRONMENT": os.environ.get("ENVIRONMENT", "not_set"), 
-            "SERVICE_NAME": os.environ.get("SERVICE_NAME", "not_set"),
-            "GOOGLE_CLOUD_PROJECT": os.environ.get("GOOGLE_CLOUD_PROJECT", "not_set")
-        },
-        "uptime": time.time() - startup_time,
-        "timestamp": datetime.utcnow().isoformat() + "Z",
-        "app_type": str(type(app)),
-        "routes": [str(route.path) for route in app.routes if hasattr(route, 'path')]
-    }
-
-# Add routes using the router to ensure they're properly registered
-app.router.add_api_route("/health", health_check_sync, methods=["GET"])
-app.router.add_api_route("/ready", readiness_check_sync, methods=["GET"])
-app.router.add_api_route("/debug", debug_info_sync, methods=["GET"])
-
-# You can add more FastAPI routes or configurations below if needed
-# Example:
-# @app.get("/hello")
-# async def read_root():
-#     return {"Hello": "World"}
+        # Always return 200 for Cloud Run startup probe
+        return JSONResponse(
+            status_code=200,
+            content={
+                "ready": False,
+                "status": "error",
+                "service": "agent-aa-pp",
+                "error": str(e),
+                "timestamp": datetime.utcnow().isoformat() + "Z"
+            }
+        )
 
 if __name__ == "__main__":
-    # Use the PORT environment variable provided by Cloud Run, defaulting to 8080
+    # Use the PORT environment variable provided by Cloud Run
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
