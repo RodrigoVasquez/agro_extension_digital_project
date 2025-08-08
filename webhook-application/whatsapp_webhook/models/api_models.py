@@ -46,3 +46,7 @@ class HealthCheckResponse(BaseModel):
     status: str = Field(default="healthy", description="Service health status")
     version: str = Field(..., description="Application version")
     environment: Optional[str] = Field(None, description="Current environment")
+    service: str = Field(default="webhook", description="Service name")
+    timestamp: Optional[str] = Field(None, description="Health check timestamp")
+    uptime: Optional[float] = Field(None, description="Service uptime in seconds")
+    checks: Optional[Dict[str, Any]] = Field(None, description="Additional health checks")

@@ -1,65 +1,37 @@
 resource "google_service_account" "agent_aa_app" {
-    account_id   = var.service_account_id_agent_aa
-    disp      startup_probe {
-        http_get {
-          path = "/health"
-          port = 8080
-        }
-              startup_probe {
-        http_get {
-          path = "/health"
-          port = 8080
-        }
-        initial_delay_seconds = 10
-        timeout_seconds      = 5
-        period_seconds       = 10
-        failure_threshold    = 3
-      }
-
-      liveness_probe {
-        http_get {
-          path = "/health"
-          port = 8080econds = 15
-        timeout_seconds      = 10
-        period_seconds       = 10
-        failure_threshold    = 5
-      }
-
-      liveness_probe {
-        http_get {
-          path = "/health"
-          port = 8080service_account_display_name_agent_aa
-    project = var.project_id
+  account_id   = var.service_account_id_agent_aa
+  display_name = var.service_account_display_name_agent_aa
+  project      = var.project_id
 }
 
 resource "google_service_account" "webhook_app_sa" {
-    account_id   = var.service_account_webhook_app
-    display_name = var.service_account_display_name_webhook_app
-    project = var.project_id
+  account_id   = var.service_account_webhook_app
+  display_name = var.service_account_display_name_webhook_app
+  project      = var.project_id
 }
 
-resource "google_project_iam_member" "agent_aa_sa_role" {   
-    project = var.project_id
-    role    = "roles/aiplatform.user"
-    member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
+resource "google_project_iam_member" "agent_aa_sa_role" {
+  project = var.project_id
+  role    = "roles/aiplatform.user"
+  member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
 }
 
-resource "google_project_iam_member" "agent_aa_sa_role_discovery" {   
-    project = var.project_id
-    role    = "roles/discoveryengine.user"
-    member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
+resource "google_project_iam_member" "agent_aa_sa_role_discovery" {
+  project = var.project_id
+  role    = "roles/discoveryengine.user"
+  member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
 }
 
-resource "google_project_iam_member" "agent_aa_sa_role_bigquery" {   
-    project = var.project_id
-    role    = "roles/bigquery.dataViewer"
-    member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
+resource "google_project_iam_member" "agent_aa_sa_role_bigquery" {
+  project = var.project_id
+  role    = "roles/bigquery.dataViewer"
+  member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
 }
 
-resource "google_project_iam_member" "agent_aa_sa_role_bigquery_job" {   
-    project = var.project_id
-    role    = "roles/bigquery.jobUser"
-    member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
+resource "google_project_iam_member" "agent_aa_sa_role_bigquery_job" {
+  project = var.project_id
+  role    = "roles/bigquery.jobUser"
+  member  = "serviceAccount:${google_service_account.agent_aa_app.email}"
 }
 
 
@@ -77,7 +49,7 @@ resource "google_cloud_run_v2_service" "cloud_run_name_agent_aa" {
 
     containers {
       image = var.gar_image_location_agent_aa
-      
+
       resources {
         limits = {
           cpu    = var.cpu_limit_agent
@@ -138,29 +110,29 @@ resource "google_cloud_run_v2_service" "cloud_run_name_agent_aa" {
 
       startup_probe {
         http_get {
-          path = "/ping"
+          path = "/ready"
           port = 8080
         }
         initial_delay_seconds = 15
-        timeout_seconds      = 10
-        period_seconds       = 10
-        failure_threshold    = 5
+        timeout_seconds       = 10
+        period_seconds        = 10
+        failure_threshold     = 5
       }
 
       liveness_probe {
         http_get {
-          path = "/ping"
+          path = "/health"
           port = 8080
         }
         initial_delay_seconds = 60
-        timeout_seconds      = 10
-        period_seconds       = 60
-        failure_threshold    = 3
+        timeout_seconds       = 10
+        period_seconds        = 60
+        failure_threshold     = 3
       }
     }
 
     max_instance_request_concurrency = var.max_concurrency
-    service_account = google_service_account.agent_aa_app.email
+    service_account                  = google_service_account.agent_aa_app.email
   }
 
 }
@@ -232,29 +204,29 @@ resource "google_cloud_run_v2_service" "cloud_run_name_webhook" {
 
       startup_probe {
         http_get {
-          path = "/ping"
+          path = "/ready"
           port = 8080
         }
         initial_delay_seconds = 10
-        timeout_seconds      = 5
-        period_seconds       = 10
-        failure_threshold    = 3
+        timeout_seconds       = 5
+        period_seconds        = 10
+        failure_threshold     = 3
       }
 
       liveness_probe {
         http_get {
-          path = "/ping"
+          path = "/health"
           port = 8080
         }
         initial_delay_seconds = 30
-        timeout_seconds      = 5
-        period_seconds       = 30
-        failure_threshold    = 3
+        timeout_seconds       = 5
+        period_seconds        = 30
+        failure_threshold     = 3
       }
     }
 
     max_instance_request_concurrency = var.max_concurrency
-    service_account = google_service_account.webhook_app_sa.email
+    service_account                  = google_service_account.webhook_app_sa.email
   }
 
   depends_on = [google_cloud_run_v2_service.cloud_run_name_agent_aa]
@@ -262,11 +234,11 @@ resource "google_cloud_run_v2_service" "cloud_run_name_webhook" {
 
 
 resource "google_cloud_run_v2_service_iam_binding" "noauth_webhook" {
-    name        = google_cloud_run_v2_service.cloud_run_name_webhook.name
-    project     = var.project_id
-    location    = var.region
-    role        = "roles/run.invoker"
-    members     = ["allUsers"]
+  name     = google_cloud_run_v2_service.cloud_run_name_webhook.name
+  project  = var.project_id
+  location = var.region
+  role     = "roles/run.invoker"
+  members  = ["allUsers"]
 }
 
 resource "google_cloud_run_v2_service_iam_member" "webhook_invokes_agent_aa" {
