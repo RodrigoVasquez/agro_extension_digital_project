@@ -28,15 +28,11 @@ app: FastAPI = get_fast_api_app(
     web=SERVE_WEB_INTERFACE,
 )
 
-# Add a simple test endpoint to verify the app is working
-@app.get("/")
-async def root():
-    """Root endpoint to verify service is running."""
-    return {"message": "Agent service is running", "timestamp": datetime.utcnow().isoformat() + "Z"}
+# Override any existing routes and add our health check endpoints
+# Use app.router.add_api_route to ensure they're properly registered
 
 # Health check endpoint for Cloud Run optimization
-@app.get("/health")
-async def health_check() -> Dict[str, Any]:
+async def health_check_sync() -> Dict[str, Any]:
     """Health check endpoint for Cloud Run startup and liveness probes"""
     current_time = time.time()
     uptime = current_time - startup_time
@@ -60,8 +56,7 @@ async def health_check() -> Dict[str, Any]:
     }
 
 # Readiness check endpoint - MUST return 200 for Cloud Run startup probe
-@app.get("/ready")
-async def readiness_check() -> Dict[str, Any]:
+async def readiness_check_sync() -> Dict[str, Any]:
     """Readiness check endpoint for detailed health status."""
     current_time = time.time()
     uptime = current_time - startup_time
@@ -96,8 +91,7 @@ async def readiness_check() -> Dict[str, Any]:
         }
 
 # Debug endpoint to help troubleshoot deployment issues
-@app.get("/debug")
-async def debug_info():
+async def debug_info_sync():
     """Debug endpoint to check service status."""
     return {
         "service": "agent",
@@ -112,6 +106,11 @@ async def debug_info():
         "app_type": str(type(app)),
         "routes": [str(route.path) for route in app.routes if hasattr(route, 'path')]
     }
+
+# Add routes using the router to ensure they're properly registered
+app.router.add_api_route("/health", health_check_sync, methods=["GET"])
+app.router.add_api_route("/ready", readiness_check_sync, methods=["GET"])
+app.router.add_api_route("/debug", debug_info_sync, methods=["GET"])
 
 # You can add more FastAPI routes or configurations below if needed
 # Example:
