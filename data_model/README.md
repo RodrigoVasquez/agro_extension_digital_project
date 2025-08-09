@@ -47,6 +47,7 @@ Represents individual questions or standards defined within a `standard_template
 *   `question`: (String, *Optional*) - El texto de la pregunta.
 *   `points`: (Integer) - Puntos asociados al estándar.
 *   `linked_resources`: (Array of Strings, *Optional*) - Una lista de valores `resource_code` para los recursos relacionados con esta pregunta.
+*   `link`: (String, *Optional*) - Una URL a información adicional o recursos relacionados con el estándar.
 
 #### 4. `standard_response` (from `surveys.data.json`)
 
@@ -160,6 +161,7 @@ erDiagram
         string question
         int points
         string linked_resources
+        string link
     }
 
     standard_response {
